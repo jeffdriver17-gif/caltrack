@@ -613,14 +613,26 @@ function ProfileScreen({onSelect}) {
             <div className="profile-section-label">Select your profile</div>
             <div className="profile-list">
               {profiles.map(p=>(
-                <button key={p.id} className="profile-btn" onClick={()=>{setLoginProfile(p);setPinEntry('');setErr('');setView('login');}}>
-                  <div className="profile-btn-avatar">{p.emoji}</div>
-                  <div className="profile-btn-info">
-                    <div className="profile-btn-name">{p.name}</div>
-                    <div className="profile-btn-sub">Tap to sign in with PIN</div>
+                <div key={p.id} className="profile-btn" style={{flexDirection:'column',alignItems:'stretch',gap:12,cursor:'default'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:14}}>
+                    <div className="profile-btn-avatar">{p.emoji}</div>
+                    <div className="profile-btn-info">
+                      <div className="profile-btn-name">{p.name}</div>
+                      <div className="profile-btn-sub">Not signed in</div>
+                    </div>
                   </div>
-                  <div className="profile-btn-chevron">›</div>
-                </button>
+                  <button
+                    onClick={()=>{setLoginProfile(p);setPinEntry('');setErr('');setView('login');}}
+                    style={{
+                      width:'100%',padding:'12px',borderRadius:12,
+                      background:'var(--orange)',border:'none',
+                      color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",
+                      fontSize:16,fontWeight:800,letterSpacing:'0.5px',
+                      cursor:'pointer',textTransform:'uppercase'
+                    }}>
+                    Sign In →
+                  </button>
+                </div>
               ))}
             </div>
             <div className="profile-section-label">or</div>
