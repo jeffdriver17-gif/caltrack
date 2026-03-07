@@ -163,25 +163,95 @@ input::placeholder { color: var(--muted); }
 .add-row-btn:active { opacity: 0.7; }
 .form-label { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
 
-/* Profile Screen */
-.profile-screen { min-height: 100vh; background: linear-gradient(150deg, #0F0F0F 0%, #0A0A0A 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; }
-.profile-logo { font-size: 56px; margin-bottom: 10px; }
-.profile-app-name { font-family: 'Barlow Condensed', sans-serif; font-size: 36px; font-weight: 900; color: var(--text); letter-spacing: 1px; }
-.profile-tagline { font-size: 14px; color: var(--subtext); margin-bottom: 28px; font-weight: 400; }
-.profile-card { background: var(--surface); border-radius: 24px; padding: 24px; width: 100%; max-width: 390px; border: 1px solid var(--border-strong); }
-.profile-card-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--text); letter-spacing: 0.3px; }
-.profile-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-.profile-btn { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; width: 100%; text-align: left; transition: all 0.2s; }
-.profile-btn:active { border-color: var(--orange); background: var(--orange-dim); }
-.profile-btn-emoji { font-size: 28px; line-height: 1; width: 48px; height: 48px; border-radius: 14px; background: var(--surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--border); }
+/* Profile / Sign-in Screen */
+.profile-screen {
+  min-height: 100vh; width: 100%;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.profile-hero {
+  background: linear-gradient(160deg, #1a0a00 0%, #0A0A0A 55%);
+  padding: calc(48px + var(--safe-top)) 24px 32px;
+  display: flex; flex-direction: column; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.profile-logo { font-size: 64px; margin-bottom: 12px; filter: drop-shadow(0 0 20px rgba(249,115,22,0.4)); }
+.profile-app-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 42px; font-weight: 900; color: var(--text);
+  letter-spacing: 2px; text-transform: uppercase;
+  background: linear-gradient(135deg, #fff 40%, var(--orange));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.profile-tagline { font-size: 13px; color: var(--subtext); margin-top: 4px; font-weight: 400; letter-spacing: 0.3px; }
+
+.profile-body { flex: 1; padding: 28px 20px calc(32px + var(--safe-bottom)); max-width: 430px; width: 100%; margin: 0 auto; }
+.profile-section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.profile-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.profile-btn {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 18px; border-radius: 18px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  cursor: pointer; width: 100%; text-align: left;
+  transition: all 0.18s; position: relative; overflow: hidden;
+}
+.profile-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--orange-dim); opacity: 0; transition: opacity 0.18s;
+}
+.profile-btn:active::before { opacity: 1; }
+.profile-btn:active { border-color: var(--orange); transform: scale(0.985); }
+.profile-btn-avatar {
+  font-size: 30px; width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--surface-2), #2a1a0a);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; border: 1.5px solid var(--border-strong);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
 .profile-btn-info { flex: 1; }
-.profile-btn-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 800; color: var(--text); }
-.profile-btn-sub { font-size: 12px; color: var(--subtext); margin-top: 1px; }
-.profile-btn-arrow { color: var(--muted); }
+.profile-btn-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: 0.3px;
+}
+.profile-btn-sub { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+.profile-btn-chevron {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: var(--orange); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #fff; font-size: 18px; font-weight: 700;
+}
+.profile-new-btn {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 18px; border-radius: 18px;
+  border: 1.5px dashed var(--border-strong);
+  background: transparent;
+  cursor: pointer; width: 100%; text-align: left;
+  transition: all 0.18s;
+}
+.profile-new-btn:active { border-color: var(--orange); background: var(--orange-dim); }
+.profile-new-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: var(--surface-2); border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0; color: var(--orange);
+}
+.profile-new-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 700; color: var(--subtext);
+}
+.profile-new-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.profile-card { background: var(--surface); border-radius: 24px; padding: 24px; width: 100%; border: 1px solid var(--border-strong); }
+.profile-card-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--text); letter-spacing: 0.3px; }
 .profile-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
 .profile-divider-line { flex: 1; height: 1px; background: var(--border); }
 .profile-divider-text { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1px; }
-.profile-new-section { display: flex; flex-direction: column; gap: 12px; }
 .emoji-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .emoji-option { font-size: 22px; padding: 8px 4px; border-radius: 10px; border: 1.5px solid transparent; background: var(--surface-2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; min-height: 44px; }
 .emoji-option:active { transform: scale(0.92); }
@@ -464,17 +534,19 @@ function ProfileScreen({onSelect}) {
   // ── Login view ──
   if(view==='login' && loginProfile) return (
     <div className="profile-screen">
-      <div className="profile-logo">{loginProfile.emoji}</div>
-      <div className="profile-app-name">Hey, {loginProfile.name}!</div>
-      <div className="profile-tagline">Enter your PIN to sign in</div>
-      <div className="profile-card">
+      <div className="profile-hero">
+        <div className="profile-logo">{loginProfile.emoji}</div>
+        <div className="profile-app-name" style={{fontSize:32}}>{loginProfile.name}</div>
+        <div className="profile-tagline">Enter your PIN to sign in</div>
+      </div>
+      <div className="profile-body">
         <PinPad value={pinEntry} onChange={v=>{setPinEntry(v);setErr('');}} maxLen={6}/>
         {err && <div style={{color:'var(--red)',fontSize:13,textAlign:'center',marginTop:12}}>{err}</div>}
         <button className="btn btn-primary btn-block" style={{marginTop:20}} onClick={doLogin} disabled={pinEntry.length<4}>
           Sign In →
         </button>
         <button className="btn btn-secondary btn-block" style={{marginTop:10}} onClick={()=>{setView('list');setPinEntry('');setErr('');}}>
-          ← Back
+          ← All Profiles
         </button>
       </div>
     </div>
@@ -483,11 +555,14 @@ function ProfileScreen({onSelect}) {
   // ── Create view ──
   if(view==='create') return (
     <div className="profile-screen">
-      <div className="profile-logo">🥗</div>
-      <div className="profile-app-name">CalTrack</div>
-      <div className="profile-tagline">Your personal calorie & macro tracker</div>
-      <div className="profile-card">
-        <div className="profile-card-title">✨ Create your profile</div>
+      <div className="profile-hero">
+        <div className="profile-logo">✨</div>
+        <div className="profile-app-name" style={{fontSize:28}}>New Profile</div>
+        <div className="profile-tagline">Set up your CalTrack account</div>
+      </div>
+      <div className="profile-body">
+        <div className="profile-card">
+        <div className="profile-card-title">Create your profile</div>
         <div style={{fontSize:12,fontWeight:600,color:'var(--subtext)',marginBottom:6}}>CHOOSE AN AVATAR</div>
         <div className="emoji-grid" style={{marginBottom:14}}>
           {PROFILE_EMOJIS.map(e=>(
@@ -517,41 +592,57 @@ function ProfileScreen({onSelect}) {
         </button>
         <button className="btn btn-secondary btn-block" style={{marginTop:10}} onClick={()=>{setView('list');setErr('');}}>← Back</button>
       </div>
+      </div>
     </div>
   );
 
   // ── Profile list ──
   return (
     <div className="profile-screen">
-      <div className="profile-logo">🥗</div>
-      <div className="profile-app-name">CalTrack</div>
-      <div className="profile-tagline">Your personal calorie & macro tracker</div>
-      <div className="profile-card">
-        {profiles.length > 0 ? (
+      {/* Hero branding strip */}
+      <div className="profile-hero">
+        <div className="profile-logo">🥗</div>
+        <div className="profile-app-name">CalTrack</div>
+        <div className="profile-tagline">Your personal calorie &amp; macro tracker</div>
+      </div>
+
+      {/* Body */}
+      <div className="profile-body">
+        {profiles.length > 0 && (
           <>
-            <div className="profile-card-title">👋 Who's tracking today?</div>
+            <div className="profile-section-label">Select your profile</div>
             <div className="profile-list">
               {profiles.map(p=>(
                 <button key={p.id} className="profile-btn" onClick={()=>{setLoginProfile(p);setPinEntry('');setErr('');setView('login');}}>
-                  <div className="profile-btn-emoji">{p.emoji}</div>
+                  <div className="profile-btn-avatar">{p.emoji}</div>
                   <div className="profile-btn-info">
                     <div className="profile-btn-name">{p.name}</div>
-                    <div className="profile-btn-sub">Tap to sign in</div>
+                    <div className="profile-btn-sub">Tap to sign in with PIN</div>
                   </div>
-                  <span style={{color:'var(--orange)',fontSize:20,fontWeight:700}}>›</span>
+                  <div className="profile-btn-chevron">›</div>
                 </button>
               ))}
             </div>
-            <div className="profile-divider">
-              <div className="profile-divider-line"/>
-              <div className="profile-divider-text">OR</div>
-              <div className="profile-divider-line"/>
-            </div>
+            <div className="profile-section-label">or</div>
           </>
-        ) : (
-          <div className="profile-card-title" style={{marginBottom:16}}>✨ Create your first profile</div>
         )}
-        <button className="btn btn-primary btn-block" onClick={()=>{setErr('');setNewName('');setNewPin('');setNewPin2('');setView('create');}}>+ New Profile</button>
+
+        {profiles.length === 0 && (
+          <div style={{textAlign:'center',padding:'32px 0 24px'}}>
+            <div style={{fontSize:48,marginBottom:12}}>👋</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:'var(--text)',marginBottom:6}}>Welcome to CalTrack</div>
+            <div style={{fontSize:14,color:'var(--subtext)'}}>Create your first profile to get started</div>
+          </div>
+        )}
+
+        {/* New profile button */}
+        <button className="profile-new-btn" onClick={()=>{setErr('');setNewName('');setNewPin('');setNewPin2('');setView('create');}}>
+          <div className="profile-new-icon">+</div>
+          <div>
+            <div className="profile-new-label">Add New Profile</div>
+            <div className="profile-new-sub">Create a profile with a PIN</div>
+          </div>
+        </button>
       </div>
     </div>
   );
