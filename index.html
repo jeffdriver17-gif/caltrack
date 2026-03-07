@@ -596,7 +596,34 @@ function ProfileScreen({onSelect}) {
     </div>
   );
 
-  // ── Profile list ──
+  // ── Profile picker (after tapping Sign In) ──
+  if(view==='select') return (
+    <div className="profile-screen">
+      <div className="profile-hero">
+        <div className="profile-logo">🥗</div>
+        <div className="profile-app-name">CalTrack</div>
+        <div className="profile-tagline">Who&#39;s tracking today?</div>
+      </div>
+      <div className="profile-body">
+        <div className="profile-section-label">Choose your profile</div>
+        <div className="profile-list">
+          {profiles.map(p=>(
+            <button key={p.id} className="profile-btn" onClick={()=>{setLoginProfile(p);setPinEntry('');setErr('');setView('login');}}>
+              <div className="profile-btn-avatar">{p.emoji}</div>
+              <div className="profile-btn-info">
+                <div className="profile-btn-name">{p.name}</div>
+                <div className="profile-btn-sub">Enter PIN to sign in</div>
+              </div>
+              <div className="profile-btn-chevron">›</div>
+            </button>
+          ))}
+        </div>
+        <button className="btn btn-secondary btn-block" style={{marginTop:8}} onClick={()=>setView('list')}>← Back</button>
+      </div>
+    </div>
+  );
+
+  // ── Main landing ──
   return (
     <div className="profile-screen">
       {/* Hero branding strip */}
@@ -608,43 +635,19 @@ function ProfileScreen({onSelect}) {
 
       {/* Body */}
       <div className="profile-body">
-        {profiles.length > 0 && (
-          <>
-            <div className="profile-section-label">Select your profile</div>
-            <div className="profile-list">
-              {profiles.map(p=>(
-                <div key={p.id} className="profile-btn" style={{flexDirection:'column',alignItems:'stretch',gap:12,cursor:'default'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:14}}>
-                    <div className="profile-btn-avatar">{p.emoji}</div>
-                    <div className="profile-btn-info">
-                      <div className="profile-btn-name">{p.name}</div>
-                      <div className="profile-btn-sub">Not signed in</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={()=>{setLoginProfile(p);setPinEntry('');setErr('');setView('login');}}
-                    style={{
-                      width:'100%',padding:'12px',borderRadius:12,
-                      background:'var(--orange)',border:'none',
-                      color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",
-                      fontSize:16,fontWeight:800,letterSpacing:'0.5px',
-                      cursor:'pointer',textTransform:'uppercase'
-                    }}>
-                    Sign In →
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className="profile-section-label">or</div>
-          </>
-        )}
-
         {profiles.length === 0 && (
-          <div style={{textAlign:'center',padding:'32px 0 24px'}}>
+          <div style={{textAlign:'center',padding:'24px 0 28px'}}>
             <div style={{fontSize:48,marginBottom:12}}>👋</div>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:800,color:'var(--text)',marginBottom:6}}>Welcome to CalTrack</div>
             <div style={{fontSize:14,color:'var(--subtext)'}}>Create your first profile to get started</div>
           </div>
+        )}
+
+        {profiles.length > 0 && (
+          <button className="btn btn-primary btn-block" style={{marginBottom:12,fontSize:18,padding:'16px',letterSpacing:'0.5px'}}
+            onClick={()=>setView('select')}>
+            Sign In →
+          </button>
         )}
 
         {/* New profile button */}
