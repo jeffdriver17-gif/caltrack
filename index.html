@@ -356,9 +356,115 @@ const FOODS = [
   {id:77,name:'Pork Loin',cat:'Protein',icon:'🍖',srv:'100g',cal:242,p:27,c:0,f:14},
   {id:78,name:'Beef Steak',cat:'Protein',icon:'🥩',srv:'100g',cal:271,p:26,c:0,f:17},
   {id:79,name:'Shrimp',cat:'Protein',icon:'🦐',srv:'100g',cal:99,p:24,c:0,f:0.3},
+  // ── Eggs ──────────────────────────────────────────────────────────────────
+  {id:80,name:'Egg (Small)',cat:'Eggs',icon:'🥚',srv:'1 small (38g)',cal:54,p:4.8,c:0.4,f:3.5},
+  {id:81,name:'Egg (Medium)',cat:'Eggs',icon:'🥚',srv:'1 medium (44g)',cal:66,p:5.5,c:0.5,f:4.4},
+  {id:82,name:'Egg (Large)',cat:'Eggs',icon:'🥚',srv:'1 large (50g)',cal:78,p:6,c:0.6,f:5},
+  {id:83,name:'Egg (XL)',cat:'Eggs',icon:'🥚',srv:'1 XL (63g)',cal:90,p:7,c:0.7,f:6},
+  {id:84,name:'Egg (Jumbo)',cat:'Eggs',icon:'🥚',srv:'1 jumbo (70g)',cal:96,p:7.5,c:0.7,f:6.5},
+  {id:85,name:'Egg White',cat:'Eggs',icon:'🥚',srv:'1 large white (33g)',cal:17,p:3.6,c:0.2,f:0},
+  {id:86,name:'Egg White (liquid, 1/4 cup)',cat:'Eggs',icon:'🥛',srv:'60ml',cal:25,p:5,c:0.4,f:0},
+  {id:87,name:'Egg Yolk',cat:'Eggs',icon:'🍳',srv:'1 large yolk (17g)',cal:55,p:2.7,c:0.6,f:4.5},
+  {id:88,name:'Hard Boiled Egg',cat:'Eggs',icon:'🥚',srv:'1 large (50g)',cal:78,p:6.3,c:0.6,f:5.3},
+  {id:89,name:'Fried Egg',cat:'Eggs',icon:'🍳',srv:'1 large (46g)',cal:90,p:6.3,c:0.4,f:7},
+  {id:90,name:'Scrambled Eggs',cat:'Eggs',icon:'🍳',srv:'2 eggs (122g)',cal:182,p:12,c:2.4,f:14},
+  {id:91,name:'Poached Egg',cat:'Eggs',icon:'🥚',srv:'1 large (50g)',cal:72,p:6,c:0.4,f:4.8},
+  {id:92,name:'Egg White Omelette',cat:'Eggs',icon:'🍳',srv:'3 whites (99g)',cal:51,p:10.8,c:0.6,f:0},
+  // ── Potatoes (all sizes) ──────────────────────────────────────────────────
+  {id:93,name:'Russet Potato (Small)',cat:'Vegetables',icon:'🥔',srv:'1 small (148g) baked',cal:134,p:3.6,c:31,f:0.1},
+  {id:94,name:'Russet Potato (Medium)',cat:'Vegetables',icon:'🥔',srv:'1 medium (213g) baked',cal:168,p:4.5,c:38,f:0.2},
+  {id:95,name:'Russet Potato (Large)',cat:'Vegetables',icon:'🥔',srv:'1 large (299g) baked',cal:290,p:7.5,c:66,f:0.3},
+  {id:96,name:'Red Potato (Small)',cat:'Vegetables',icon:'🥔',srv:'1 small (128g)',cal:98,p:2.5,c:22,f:0.2},
+  {id:97,name:'Red Potato (Medium)',cat:'Vegetables',icon:'🥔',srv:'1 medium (213g)',cal:154,p:4,c:35,f:0.3},
+  {id:98,name:'Red Potato (Large)',cat:'Vegetables',icon:'🥔',srv:'1 large (299g)',cal:214,p:5.5,c:49,f:0.4},
+  {id:99,name:'Baby Potatoes',cat:'Vegetables',icon:'🥔',srv:'100g (5-6 potatoes)',cal:77,p:2.1,c:17,f:0.1},
+  {id:100,name:'Boiled Potato',cat:'Vegetables',icon:'🥔',srv:'100g',cal:87,p:1.9,c:20,f:0.1},
+  {id:101,name:'Mashed Potato (with butter)',cat:'Vegetables',icon:'🥔',srv:'1 cup (210g)',cal:237,p:4,c:35,f:9},
+  {id:102,name:'Mashed Potato (plain)',cat:'Vegetables',icon:'🥔',srv:'1 cup (210g)',cal:180,p:4,c:35,f:0.5},
+  {id:103,name:'Sweet Potato (Small)',cat:'Vegetables',icon:'🍠',srv:'1 small (60g)',cal:54,p:1,c:13,f:0.1},
+  {id:104,name:'Sweet Potato (Large)',cat:'Vegetables',icon:'🍠',srv:'1 large (200g)',cal:172,p:3.1,c:40,f:0.2},
+  // ── Rice Cakes ───────────────────────────────────────────────────────────
+  {id:105,name:'Rice Cake (Plain)',cat:'Snacks',icon:'🍘',srv:'1 cake (9g)',cal:35,p:0.7,c:7.3,f:0.3},
+  {id:106,name:'Rice Cake (Lightly Salted)',cat:'Snacks',icon:'🍘',srv:'1 cake (9g)',cal:35,p:0.7,c:7.3,f:0.3},
+  {id:107,name:'Rice Cake (Caramel)',cat:'Snacks',icon:'🍘',srv:'1 cake (13g)',cal:50,p:0.5,c:11,f:0.3},
+  {id:108,name:'Rice Cake (Cheddar)',cat:'Snacks',icon:'🍘',srv:'1 cake (9g)',cal:45,p:0.8,c:9,f:0.5},
+  {id:109,name:'Rice Cake (Apple Cinnamon)',cat:'Snacks',icon:'🍘',srv:'1 cake (11g)',cal:50,p:0.5,c:11,f:0.3},
+  {id:110,name:'Rice Cake (White Cheddar)',cat:'Snacks',icon:'🍘',srv:'1 cake (9g)',cal:45,p:0.8,c:9,f:0.6},
+  {id:111,name:'Rice Cake (Chocolate)',cat:'Snacks',icon:'🍫',srv:'1 cake (13g)',cal:60,p:0.8,c:13,f:0.8},
+  {id:112,name:'Mini Rice Cakes',cat:'Snacks',icon:'🍘',srv:'1 oz (28g)',cal:110,p:2,c:24,f:0.5},
+  // ── More Protein Sources ──────────────────────────────────────────────────
+  {id:113,name:'Chicken Thigh (skinless)',cat:'Protein',icon:'🍗',srv:'100g',cal:209,p:26,c:0,f:11},
+  {id:114,name:'Chicken Drumstick (skinless)',cat:'Protein',icon:'🍗',srv:'1 drumstick (86g)',cal:148,p:22,c:0,f:6.5},
+  {id:115,name:'Chicken Tender',cat:'Protein',icon:'🍗',srv:'100g',cal:150,p:29,c:0,f:2.5},
+  {id:116,name:'Ground Turkey (93% lean)',cat:'Protein',icon:'🦃',srv:'100g',cal:149,p:17,c:0,f:9},
+  {id:117,name:'Ground Chicken',cat:'Protein',icon:'🍗',srv:'100g',cal:148,p:17,c:0,f:9},
+  {id:118,name:'Tilapia',cat:'Protein',icon:'🐟',srv:'100g',cal:96,p:20,c:0,f:2},
+  {id:119,name:'Cod',cat:'Protein',icon:'🐟',srv:'100g',cal:82,p:18,c:0,f:0.7},
+  {id:120,name:'Mahi Mahi',cat:'Protein',icon:'🐟',srv:'100g',cal:85,p:19,c:0,f:0.5},
+  {id:121,name:'Tuna Steak',cat:'Protein',icon:'🐟',srv:'100g',cal:144,p:30,c:0,f:1},
+  {id:122,name:'Lean Ground Beef (96/4)',cat:'Protein',icon:'🥩',srv:'100g',cal:137,p:23,c:0,f:4.5},
+  {id:123,name:'Beef Jerky',cat:'Protein',icon:'🥩',srv:'1 oz (28g)',cal:82,p:9,c:6,f:1},
+  {id:124,name:'Deli Turkey Breast',cat:'Protein',icon:'🍗',srv:'2 slices (56g)',cal:62,p:12,c:2,f:1},
+  {id:125,name:'Deli Chicken Breast',cat:'Protein',icon:'🍗',srv:'2 slices (56g)',cal:60,p:11,c:2,f:1},
+  {id:126,name:'Whey Protein (1 scoop)',cat:'Protein',icon:'💪',srv:'1 scoop (30g)',cal:120,p:25,c:2,f:1.5},
+  {id:127,name:'Casein Protein (1 scoop)',cat:'Protein',icon:'💪',srv:'1 scoop (34g)',cal:130,p:24,c:4,f:1},
+  {id:128,name:'Egg White Protein (1 scoop)',cat:'Protein',icon:'💪',srv:'1 scoop (28g)',cal:100,p:24,c:1,f:0},
+  // ── More Dairy ───────────────────────────────────────────────────────────
+  {id:129,name:'Greek Yogurt (non-fat)',cat:'Dairy',icon:'🥛',srv:'1 cup (227g)',cal:133,p:23,c:9,f:0.5},
+  {id:130,name:'Skim Milk',cat:'Dairy',icon:'🥛',srv:'1 cup (240ml)',cal:83,p:8.3,c:12,f:0.2},
+  {id:131,name:'2% Milk',cat:'Dairy',icon:'🥛',srv:'1 cup (240ml)',cal:122,p:8.1,c:12,f:4.8},
+  {id:132,name:'String Cheese',cat:'Dairy',icon:'🧀',srv:'1 stick (28g)',cal:80,p:7,c:1,f:5},
+  {id:133,name:'Low Fat Cottage Cheese',cat:'Dairy',icon:'🥣',srv:'1/2 cup (113g)',cal:81,p:14,c:3,f:1.2},
+  {id:134,name:'Low Fat Mozzarella',cat:'Dairy',icon:'🧀',srv:'1 oz (28g)',cal:72,p:8,c:1,f:4.5},
+  {id:135,name:'Ricotta (part skim)',cat:'Dairy',icon:'🧀',srv:'1/2 cup (124g)',cal:171,p:14,c:6.4,f:10},
+  // ── More Grains ──────────────────────────────────────────────────────────
+  {id:136,name:'Cream of Wheat (cooked)',cat:'Grains',icon:'🥣',srv:'1 cup (240g)',cal:133,p:4,c:28,f:0.5},
+  {id:137,name:'Cream of Rice (cooked)',cat:'Grains',icon:'🥣',srv:'1 cup (240g)',cal:127,p:2,c:28,f:0.3},
+  {id:138,name:'Egg Noodles (cooked)',cat:'Grains',icon:'🍜',srv:'1 cup (160g)',cal:221,p:7.3,c:40,f:3.3},
+  {id:139,name:'Barley (cooked)',cat:'Grains',icon:'🌾',srv:'1 cup (157g)',cal:193,p:3.5,c:44,f:0.7},
+  {id:140,name:'Steel Cut Oats (cooked)',cat:'Grains',icon:'🥣',srv:'1 cup (240g)',cal:170,p:6,c:29,f:3},
+  {id:141,name:'Whole Wheat Pasta (cooked)',cat:'Grains',icon:'🍝',srv:'1 cup (140g)',cal:174,p:7.5,c:37,f:0.8},
+  {id:142,name:'Farro (cooked)',cat:'Grains',icon:'🌾',srv:'1 cup (202g)',cal:220,p:8,c:46,f:1.5},
+  // ── Snacks ───────────────────────────────────────────────────────────────
+  {id:143,name:'Air-Popped Popcorn',cat:'Snacks',icon:'🍿',srv:'3 cups (24g)',cal:93,p:3,c:19,f:1.1},
+  {id:144,name:'Pretzels',cat:'Snacks',icon:'🥨',srv:'1 oz (28g)',cal:108,p:2.5,c:23,f:0.8},
+  {id:145,name:'Pita Chips',cat:'Snacks',icon:'🥨',srv:'1 oz (28g)',cal:130,p:3,c:19,f:5},
+  {id:146,name:'Wasa Crispbread',cat:'Snacks',icon:'🍞',srv:'1 slice (11g)',cal:40,p:1,c:8,f:0.2},
+  {id:147,name:'Protein Bar (generic)',cat:'Snacks',icon:'💪',srv:'1 bar (60g)',cal:200,p:20,c:22,f:7},
+  {id:148,name:'Granola Bar',cat:'Snacks',icon:'🥣',srv:'1 bar (47g)',cal:193,p:4,c:29,f:7.6},
+  {id:149,name:'Pickle Spear',cat:'Snacks',icon:'🥒',srv:'1 spear (35g)',cal:4,p:0.2,c:0.8,f:0},
+  {id:150,name:'Hummus',cat:'Snacks',icon:'🫘',srv:'2 tbsp (30g)',cal:70,p:2,c:6,f:4.5},
+  {id:151,name:'Baby Carrots',cat:'Snacks',icon:'🥕',srv:'100g (~10 carrots)',cal:35,p:0.8,c:8.2,f:0.2},
+  {id:152,name:'Celery Sticks',cat:'Snacks',icon:'🥬',srv:'1 cup (101g)',cal:16,p:0.7,c:3.5,f:0.2},
+  // ── Nuts & Seeds expanded ─────────────────────────────────────────────────
+  {id:153,name:'Walnuts',cat:'Nuts',icon:'🌰',srv:'1 oz (28g)',cal:185,p:4.3,c:3.9,f:18.5},
+  {id:154,name:'Cashews',cat:'Nuts',icon:'🫒',srv:'1 oz (28g)',cal:157,p:5.2,c:8.6,f:12.4},
+  {id:155,name:'Pistachios',cat:'Nuts',icon:'🫘',srv:'1 oz (28g)',cal:159,p:5.7,c:7.7,f:12.8},
+  {id:156,name:'Sunflower Seeds',cat:'Nuts',icon:'🌻',srv:'1 oz (28g)',cal:166,p:5.8,c:6.8,f:14.4},
+  {id:157,name:'Chia Seeds',cat:'Nuts',icon:'🌱',srv:'1 oz (28g)',cal:138,p:4.7,c:12,f:8.7},
+  {id:158,name:'Flax Seeds',cat:'Nuts',icon:'🌱',srv:'2 tbsp (20g)',cal:110,p:3.8,c:6,f:8.5},
+  {id:159,name:'Hemp Seeds',cat:'Nuts',icon:'🌱',srv:'3 tbsp (30g)',cal:170,p:10,c:2.6,f:14},
+  {id:160,name:'Almond Butter',cat:'Nuts',icon:'🥜',srv:'2 tbsp (32g)',cal:196,p:7,c:7,f:18},
+  {id:161,name:'Peanuts',cat:'Nuts',icon:'🥜',srv:'1 oz (28g)',cal:170,p:7,c:6.1,f:14.9},
+  {id:162,name:'Macadamia Nuts',cat:'Nuts',icon:'🌰',srv:'1 oz (28g)',cal:204,p:2.2,c:3.9,f:21.5},
+  // ── More Vegetables ──────────────────────────────────────────────────────
+  {id:163,name:'Arugula',cat:'Vegetables',icon:'🥬',srv:'1 cup (20g)',cal:5,p:0.5,c:0.7,f:0.1},
+  {id:164,name:'Brussels Sprouts',cat:'Vegetables',icon:'🥦',srv:'1 cup (88g)',cal:38,p:3,c:8,f:0.3},
+  {id:165,name:'Bok Choy',cat:'Vegetables',icon:'🥬',srv:'1 cup (70g)',cal:9,p:1,c:1.5,f:0.1},
+  {id:166,name:'Artichoke',cat:'Vegetables',icon:'🌱',srv:'1 medium (120g)',cal:60,p:4.2,c:13,f:0.2},
+  {id:167,name:'Radishes',cat:'Vegetables',icon:'🫑',srv:'1 cup (116g)',cal:19,p:0.8,c:4,f:0.1},
+  {id:168,name:'Eggplant',cat:'Vegetables',icon:'🍆',srv:'1 cup cubed (99g)',cal:20,p:0.8,c:4.8,f:0.2},
+  {id:169,name:'Swiss Chard',cat:'Vegetables',icon:'🥬',srv:'1 cup raw (36g)',cal:7,p:0.6,c:1.4,f:0.1},
+  {id:170,name:'Spaghetti Squash',cat:'Vegetables',icon:'🎃',srv:'1 cup (155g)',cal:42,p:1,c:10,f:0.4},
+  // ── More Legumes ─────────────────────────────────────────────────────────
+  {id:171,name:'Edamame',cat:'Legumes',icon:'🫛',srv:'1 cup shelled (155g)',cal:189,p:17,c:14,f:8},
+  {id:172,name:'Kidney Beans',cat:'Legumes',icon:'🫘',srv:'1 cup (177g)',cal:225,p:15,c:40,f:0.9},
+  {id:173,name:'Pinto Beans',cat:'Legumes',icon:'🫘',srv:'1 cup (171g)',cal:245,p:15,c:45,f:1.1},
+  {id:174,name:'Soybeans',cat:'Legumes',icon:'🫘',srv:'1 cup (172g)',cal:298,p:29,c:17,f:15},
+  {id:175,name:'Split Peas',cat:'Legumes',icon:'🫛',srv:'1 cup cooked (196g)',cal:231,p:16,c:41,f:0.8},
 ];
 
-const CATEGORIES = ['All','Fruits','Vegetables','Grains','Protein','Dairy','Nuts','Legumes'];
+const CATEGORIES = ['All','Fruits','Vegetables','Eggs','Grains','Protein','Dairy','Nuts','Legumes','Snacks'];
 const MEALS = ['Breakfast','Lunch','Dinner','Snacks'];
 const MEAL_ICONS = {Breakfast:'🌅',Lunch:'🥗',Dinner:'🍽️',Snacks:'🍿'};
 const DEFAULT_GOALS = {calories:2000,protein:150,carbs:220,fat:65};
@@ -758,6 +864,7 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   const [recipeModal, setRecipeModal] = useState(null);
   const [logRecipeModal, setLogRecipeModal] = useState(null);
   const [toast, setToast] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
   const [defaultMeal, setDefaultMeal] = useState('Breakfast');
   const [syncing, setSyncing] = useState(true);
 
@@ -891,8 +998,8 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
         </div>
       </div>
       <div className="scroll-area">
-        {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry}/>}
-        {tab==='search' && <SearchTab defaultMeal={defaultMeal} onAdd={addEntry} profileId={profileId} profileName={profileName}/>}
+        {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry} onQuickAdd={(cal,meal)=>addEntry({id:uid(),name:'Quick Add',icon:'⚡',srv:`${cal} cal`,cal,p:0,c:0,f:0},1,meal)}/>}
+        {tab==='search' && <SearchTab defaultMeal={defaultMeal} onAdd={addEntry} profileId={profileId} profileName={profileName} showCreate={showCreate} onCreateHandled={()=>setShowCreate(false)}/>}
         {tab==='recipes' && <RecipesTab recipes={recipes} onNew={()=>setRecipeModal({mode:'new',recipe:null})} onView={r=>setRecipeModal({mode:'view',recipe:r})} onLog={r=>setLogRecipeModal(r)}/>}
         {tab==='settings' && <SettingsTab goals={goals} setGoals={saveGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji}/>}
       </div>
@@ -909,6 +1016,12 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
             <div className="nav-pip"/>
           </button>
         ))}
+        <button className="nav-item" onClick={()=>{setTab('search');setShowCreate(true);}} aria-label="Create Food"
+          style={{color:'var(--orange)'}}>
+          <Icon name="plus" size={22}/>
+          <span className="nav-label" style={{color:'var(--orange)'}}>Create</span>
+          <div className="nav-pip"/>
+        </button>
       </nav>
       {addModal && <AddFoodModal food={addModal.food} defaultMeal={addModal.meal||defaultMeal} onAdd={(qty,meal)=>{addEntry(addModal.food,qty,meal);closeAll();}} onClose={closeAll}/>}
       {recipeModal && <RecipeModal mode={recipeModal.mode} recipe={recipeModal.recipe} onSave={r=>{saveRecipe(r);closeAll();}} onDelete={id=>{deleteRecipe(id);closeAll();}} onLog={r=>{closeAll();setLogRecipeModal(r);}} onClose={closeAll}/>}
@@ -917,9 +1030,11 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   );
 }
 
-function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddFood, onRemove}) {
+function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddFood, onRemove, onQuickAdd}) {
   const remaining = goals.calories - totals.cal;
   const overGoal = remaining < 0;
+  const [quickMeal, setQuickMeal] = React.useState('Snacks');
+  const [customCal, setCustomCal] = React.useState('');
   return (
     <div>
       {/* Calorie ring card */}
@@ -944,6 +1059,38 @@ function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddF
               <span className="macro-pill pill-f">F {r1(totals.f)}g</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Quick Add Calories card */}
+      <div className="card">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,letterSpacing:'0.3px'}}>⚡ QUICK ADD</div>
+          <select value={quickMeal} onChange={e=>setQuickMeal(e.target.value)}
+            style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,
+                    color:'var(--text)',fontSize:12,fontWeight:600,padding:'4px 8px',cursor:'pointer'}}>
+            {MEALS.map(m=><option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:10}}>
+          {[25,50,100,150,200,300,400,500].map(cal=>(
+            <button key={cal} onClick={()=>onQuickAdd(cal,quickMeal)} style={{
+              background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,
+              padding:'8px 12px',color:'var(--text)',cursor:'pointer',fontSize:13,fontWeight:700,
+              fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'0.3px',transition:'all 0.15s',
+              flexShrink:0
+            }}>+{cal}</button>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <input type="number" placeholder="Custom cal..." value={customCal}
+            onChange={e=>setCustomCal(e.target.value)}
+            style={{flex:1,background:'var(--surface)',border:'1px solid var(--border)',
+                    borderRadius:10,padding:'8px 12px',color:'var(--text)',fontSize:13}}/>
+          <button onClick={()=>{const c=parseInt(customCal);if(c>0){onQuickAdd(c,quickMeal);setCustomCal('');}}}
+            style={{background:'var(--orange)',border:'none',borderRadius:10,
+                    padding:'8px 16px',color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",
+                    fontSize:13,fontWeight:800,cursor:'pointer',whiteSpace:'nowrap'}}>Add</button>
         </div>
       </div>
 
@@ -1299,13 +1446,18 @@ function CustomFoodModal({onSave, onClose, profileId, profileName}) {
   );
 }
 
-function SearchTab({defaultMeal, onAdd, profileId, profileName}) {
+function SearchTab({defaultMeal, onAdd, profileId, profileName, showCreate, onCreateHandled}) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('All');
   const [selected, setSelected] = useState(null);
   const [showCustom, setShowCustom] = useState(false);
   const [communityFoods, setCommunityFoods] = useState([]);
   const [loadingCommunity, setLoadingCommunity] = useState(false);
+
+  // Open modal when triggered from bottom nav +Create
+  useEffect(()=>{
+    if(showCreate){ setShowCustom(true); onCreateHandled?.(); }
+  },[showCreate]);
 
   // Load community foods on mount and when search changes
   useEffect(()=>{
@@ -1337,9 +1489,26 @@ function SearchTab({defaultMeal, onAdd, profileId, profileName}) {
   },[q,cat]);
 
   const communityFiltered = useMemo(()=>{
-    if(cat!=='All' && cat!=='Custom') return [];
+    if(cat!=='All') return [];
     return communityFoods;
   },[communityFoods, cat]);
+
+  // Merge community + local, sorted by relevance then alpha
+  const allResults = useMemo(()=>{
+    const combined = [...localResults, ...communityFiltered];
+    if(q){
+      const lq = q.toLowerCase();
+      combined.sort((a,b)=>{
+        const ai = a.name.toLowerCase().indexOf(lq);
+        const bi = b.name.toLowerCase().indexOf(lq);
+        if(ai !== bi) return ai - bi;
+        return a.name.localeCompare(b.name);
+      });
+    } else {
+      combined.sort((a,b)=>a.name.localeCompare(b.name));
+    }
+    return combined;
+  },[localResults, communityFiltered, q]);
 
   async function handleAddCommunityFood(food, qty, meal) {
     onAdd(food, qty, meal);
@@ -1355,7 +1524,6 @@ function SearchTab({defaultMeal, onAdd, profileId, profileName}) {
     setSelected(food);
   }
 
-  const allResults = [...localResults, ...communityFiltered];
   const showEmpty = allResults.length===0 && !loadingCommunity;
 
   return (
@@ -1369,58 +1537,14 @@ function SearchTab({defaultMeal, onAdd, profileId, profileName}) {
         </div>
       </div>
 
-      {/* Category chips + Create button */}
-      <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px 6px',overflowX:'auto'}}>
-        <div className="chips-row" style={{flex:1,padding:0,overflowX:'auto',gap:6}}>
-          {CATEGORIES.map(c=>(
-            <div key={c} className={`chip${cat===c?' active':''}`} onClick={()=>setCat(c)} style={{cursor:'pointer',flexShrink:0}}>{c}</div>
-          ))}
-        </div>
-        <button onClick={()=>setShowCustom(true)} style={{
-          flexShrink:0,display:'flex',alignItems:'center',gap:5,
-          background:'var(--orange)',border:'none',borderRadius:10,
-          padding:'8px 12px',color:'#fff',cursor:'pointer',
-          fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,
-          letterSpacing:'0.3px',whiteSpace:'nowrap'
-        }}>+ Create</button>
+      {/* Category chips */}
+      <div className="chips-row" style={{padding:'10px 12px 6px',gap:6,overflowX:'auto'}}>
+        {CATEGORIES.map(c=>(
+          <div key={c} className={`chip${cat===c?' active':''}`} onClick={()=>setCat(c)} style={{cursor:'pointer',flexShrink:0}}>{c}</div>
+        ))}
       </div>
 
       <div className="card-flush">
-        {/* Community foods section header */}
-        {communityFiltered.length > 0 && (
-          <div style={{padding:'8px 16px 4px',display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11,fontWeight:700,color:'var(--orange)',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'1px'}}>⭐ COMMUNITY FOODS</span>
-            <span style={{fontSize:11,color:'var(--muted)'}}>{communityFiltered.length} uploaded</span>
-          </div>
-        )}
-        {communityFiltered.map(food=>(
-          <div key={food.id} className="food-item" onClick={()=>setSelected(food)}
-            style={{borderLeft:'3px solid var(--orange)',marginLeft:0,paddingLeft:13}}>
-            <div className="food-icon"><span>{food.icon}</span></div>
-            <div className="food-info">
-              <div style={{display:'flex',alignItems:'center',gap:6}}>
-                <div className="food-name">{food.name}</div>
-                <span style={{fontSize:10,fontWeight:700,color:'var(--orange)',background:'var(--orange-dim)',borderRadius:4,padding:'1px 5px'}}>COMMUNITY</span>
-              </div>
-              {food.brand && <div style={{fontSize:11,color:'var(--muted)',marginBottom:2}}>{food.brand}</div>}
-              <div className="food-meta">{food.srv} · by {food.uploadedBy}</div>
-              <div style={{display:'flex',gap:4,marginTop:4}}>
-                <span className="macro-pill pill-p">P{food.p}g</span>
-                <span className="macro-pill pill-c">C{food.c}g</span>
-                <span className="macro-pill pill-f">F{food.f}g</span>
-              </div>
-            </div>
-            <div className="food-cal">{food.cal}</div>
-          </div>
-        ))}
-
-        {/* Divider if both community and local results */}
-        {communityFiltered.length > 0 && localResults.length > 0 && (
-          <div style={{padding:'8px 16px 4px',display:'flex',alignItems:'center',gap:6}}>
-            <span style={{fontSize:11,fontWeight:700,color:'var(--subtext)',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'1px'}}>📦 FOOD DATABASE</span>
-          </div>
-        )}
-
         {showEmpty && (
           <div className="empty-state">
             <div className="empty-state-icon"><Icon name="search" size={24} color="var(--muted)"/></div>
@@ -1432,12 +1556,17 @@ function SearchTab({defaultMeal, onAdd, profileId, profileName}) {
             }}>+ Create Custom Food</button>
           </div>
         )}
-        {localResults.slice(0,60).map(food=>(
-          <div key={food.id} className="food-item" onClick={()=>setSelected(food)}>
+        {allResults.slice(0,80).map(food=>(
+          <div key={food.id} className="food-item" onClick={()=>setSelected(food)}
+            style={food.community?{borderLeft:'3px solid var(--orange)',paddingLeft:13}:{}}>
             <div className="food-icon"><span>{food.icon}</span></div>
             <div className="food-info">
-              <div className="food-name">{food.name}</div>
-              <div className="food-meta">{food.srv}</div>
+              <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                <div className="food-name">{food.name}</div>
+                {food.community && <span style={{fontSize:10,fontWeight:700,color:'var(--orange)',background:'var(--orange-dim)',borderRadius:4,padding:'1px 5px',flexShrink:0}}>COMMUNITY</span>}
+              </div>
+              {food.brand && <div style={{fontSize:11,color:'var(--muted)',marginBottom:2}}>{food.brand}</div>}
+              <div className="food-meta">{food.srv}{food.community && food.uploadedBy ? ` · by ${food.uploadedBy}` : ''}</div>
               <div style={{display:'flex',gap:4,marginTop:4}}>
                 <span className="macro-pill pill-p">P{food.p}g</span>
                 <span className="macro-pill pill-c">C{food.c}g</span>
