@@ -891,7 +891,7 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
       </div>
       <div className="scroll-area">
         {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry}/>}
-        {tab==='search' && <SearchTab defaultMeal={defaultMeal} onAdd={addEntry}/>}
+        {tab==='search' && <SearchTab defaultMeal={defaultMeal} onAdd={addEntry} profileId={profileId} profileName={profileName}/>}
         {tab==='recipes' && <RecipesTab recipes={recipes} onNew={()=>setRecipeModal({mode:'new',recipe:null})} onView={r=>setRecipeModal({mode:'view',recipe:r})} onLog={r=>setLogRecipeModal(r)}/>}
         {tab==='settings' && <SettingsTab goals={goals} setGoals={saveGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji}/>}
       </div>
@@ -1019,16 +1019,156 @@ function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddF
   );
 }
 
-function SearchTab({defaultMeal, onAdd}) {
+function CustomFoodModal({onSave, onClose, profileId, profileName}) {
+  const [name, setName] = useState('');
+  const [brand, setBrand] = useState('');
+  const [srv, setSrv] = useState('1 serving');
+  const [cal, setCal] = useState('');
+  const [p, setP] = useState('');
+  const [c, setC] = useState('');
+  const [f, setF] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function handleSave() {
+    if(!name.trim()){setErr('Food name required');return;}
+    if(!cal||isNaN(parseFloat(cal))){setErr('Calories required');return;}
+    setBusy(true);
+    const food = {
+      id: uid(), profile_id: profileId, uploaded_by: profileName,
+      name: name.trim(), brand: brand.trim(), category: 'Custom',
+      srv: srv.trim()||'1 serving',
+      cal: parseFloat(cal)||0, p: parseFloat(p)||0,
+      c: parseFloat(c)||0, f: parseFloat(f)||0,
+      uses: 1
+    };
+    const {error} = await sb.from('ct_community_foods').insert(food);
+    if(error){setErr('Failed to save — try again');setBusy(false);return;}
+    onSave({...food, icon:'⭐', cat:'Custom', community:true});
+  }
+
+  const inputStyle = {background:'var(--surface-2)',border:'1.5px solid var(--border)',borderRadius:10,
+    padding:'11px 13px',fontSize:15,width:'100%',outline:'none',color:'var(--text)',fontFamily:"'Barlow',sans-serif"};
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800}}>Create Custom Food</div>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'var(--subtext)',fontSize:22,cursor:'pointer',padding:4}}>✕</button>
+        </div>
+
+        <div style={{marginBottom:10}}>
+          <div className="form-label">Food Name *</div>
+          <input placeholder="e.g. My Special Noodle" value={name} onChange={e=>{setName(e.target.value);setErr('');}} style={inputStyle}/>
+        </div>
+        <div style={{marginBottom:10}}>
+          <div className="form-label">Brand / Description</div>
+          <input placeholder="e.g. Homemade, Brand X..." value={brand} onChange={e=>setBrand(e.target.value)} style={inputStyle}/>
+        </div>
+        <div style={{marginBottom:14}}>
+          <div className="form-label">Serving Size</div>
+          <input placeholder="e.g. 1 cup, 100g, 1 serving" value={srv} onChange={e=>setSrv(e.target.value)} style={inputStyle}/>
+        </div>
+
+        <div className="form-label" style={{marginBottom:8}}>Nutrition per serving *</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
+          <div>
+            <div className="form-label">Calories *</div>
+            <input type="number" inputMode="decimal" placeholder="0" value={cal} onChange={e=>{setCal(e.target.value);setErr('');}}
+              style={{...inputStyle,borderColor:'var(--orange)',background:'var(--orange-dim)'}}/>
+          </div>
+          <div>
+            <div className="form-label">Protein (g)</div>
+            <input type="number" inputMode="decimal" placeholder="0" value={p} onChange={e=>setP(e.target.value)}
+              style={{...inputStyle,borderColor:'rgba(59,130,246,0.4)',background:'var(--blue-dim)'}}/>
+          </div>
+          <div>
+            <div className="form-label">Carbs (g)</div>
+            <input type="number" inputMode="decimal" placeholder="0" value={c} onChange={e=>setC(e.target.value)}
+              style={{...inputStyle,borderColor:'rgba(245,158,11,0.4)',background:'var(--amber-dim)'}}/>
+          </div>
+          <div>
+            <div className="form-label">Fat (g)</div>
+            <input type="number" inputMode="decimal" placeholder="0" value={f} onChange={e=>setF(e.target.value)}
+              style={{...inputStyle,borderColor:'rgba(239,68,68,0.4)',background:'var(--red-dim)'}}/>
+          </div>
+        </div>
+
+        <div style={{background:'var(--green-dim)',border:'1px solid rgba(34,197,94,0.2)',borderRadius:10,padding:'10px 12px',marginBottom:14,fontSize:12,color:'var(--green)'}}>
+          ✓ This food will be shared with all CalTrack users once uploaded
+        </div>
+
+        {err && <div style={{color:'var(--red)',fontSize:13,marginBottom:10}}>{err}</div>}
+
+        <button className="btn btn-primary btn-block" onClick={handleSave} disabled={busy}>
+          {busy ? 'Uploading…' : '⬆ Upload & Add to Log'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SearchTab({defaultMeal, onAdd, profileId, profileName}) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('All');
   const [selected, setSelected] = useState(null);
-  const results = useMemo(()=>{
+  const [showCustom, setShowCustom] = useState(false);
+  const [communityFoods, setCommunityFoods] = useState([]);
+  const [loadingCommunity, setLoadingCommunity] = useState(false);
+
+  // Load community foods on mount and when search changes
+  useEffect(()=>{
+    let cancelled = false;
+    async function loadCommunity(){
+      setLoadingCommunity(true);
+      try {
+        let query = sb.from('ct_community_foods').select('*').order('uses',{ascending:false}).limit(100);
+        if(q) query = query.ilike('name',`%${q}%`);
+        const {data} = await query;
+        if(!cancelled) setCommunityFoods((data||[]).map(r=>({
+          id:'comm_'+r.id, _communityId:r.id, name:r.name,
+          brand:r.brand, srv:r.srv, cal:r.cal, p:r.p, c:r.c, f:r.f,
+          cat:'Custom', icon:'⭐', community:true,
+          uploadedBy:r.uploaded_by, uses:r.uses
+        })));
+      } catch(e){ /* ignore */ }
+      if(!cancelled) setLoadingCommunity(false);
+    }
+    loadCommunity();
+    return ()=>{cancelled=true;};
+  },[q]);
+
+  const localResults = useMemo(()=>{
     let list = FOODS;
     if(cat!=='All') list = list.filter(f=>f.cat===cat);
-    if(q) { const lq=q.toLowerCase(); list=list.filter(f=>f.name.toLowerCase().includes(lq)||f.cat.toLowerCase().includes(lq)); }
+    if(q){ const lq=q.toLowerCase(); list=list.filter(f=>f.name.toLowerCase().includes(lq)||f.cat.toLowerCase().includes(lq)); }
     return list;
   },[q,cat]);
+
+  const communityFiltered = useMemo(()=>{
+    if(cat!=='All' && cat!=='Custom') return [];
+    return communityFoods;
+  },[communityFoods, cat]);
+
+  async function handleAddCommunityFood(food, qty, meal) {
+    onAdd(food, qty, meal);
+    // Increment uses counter
+    if(food._communityId) {
+      await sb.from('ct_community_foods').update({uses: (food.uses||1)+1}).eq('id', food._communityId);
+    }
+  }
+
+  function handleCustomSaved(food) {
+    setCommunityFoods(prev=>[{...food,id:'comm_'+food.id,_communityId:food.id,uploadedBy:food.uploaded_by||profileName,uses:1}, ...prev]);
+    setShowCustom(false);
+    setSelected(food);
+  }
+
+  const allResults = [...localResults, ...communityFiltered];
+  const showEmpty = allResults.length===0 && !loadingCommunity;
+
   return (
     <div>
       <div style={{padding:'12px 12px 0'}}>
@@ -1036,23 +1176,74 @@ function SearchTab({defaultMeal, onAdd}) {
           <div style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'var(--muted)',pointerEvents:'none'}}>
             <Icon name="search" size={18}/>
           </div>
-          <input type="search" placeholder="Search 170+ foods..." value={q} onChange={e=>setQ(e.target.value)} style={{paddingLeft:44}}/>
+          <input type="search" placeholder="Search foods + community uploads..." value={q} onChange={e=>setQ(e.target.value)} style={{paddingLeft:44}}/>
         </div>
       </div>
-      <div className="chips-row" style={{paddingTop:10,paddingBottom:6}}>
-        {CATEGORIES.map(c=>(
-          <div key={c} className={`chip${cat===c?' active':''}`} onClick={()=>setCat(c)} style={{cursor:'pointer'}}>{c}</div>
-        ))}
+
+      {/* Category chips + Create button */}
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px 6px',overflowX:'auto'}}>
+        <div className="chips-row" style={{flex:1,padding:0,overflowX:'auto',gap:6}}>
+          {CATEGORIES.map(c=>(
+            <div key={c} className={`chip${cat===c?' active':''}`} onClick={()=>setCat(c)} style={{cursor:'pointer',flexShrink:0}}>{c}</div>
+          ))}
+        </div>
+        <button onClick={()=>setShowCustom(true)} style={{
+          flexShrink:0,display:'flex',alignItems:'center',gap:5,
+          background:'var(--orange)',border:'none',borderRadius:10,
+          padding:'8px 12px',color:'#fff',cursor:'pointer',
+          fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:800,
+          letterSpacing:'0.3px',whiteSpace:'nowrap'
+        }}>+ Create</button>
       </div>
+
       <div className="card-flush">
-        {results.length===0 && (
+        {/* Community foods section header */}
+        {communityFiltered.length > 0 && (
+          <div style={{padding:'8px 16px 4px',display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:11,fontWeight:700,color:'var(--orange)',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'1px'}}>⭐ COMMUNITY FOODS</span>
+            <span style={{fontSize:11,color:'var(--muted)'}}>{communityFiltered.length} uploaded</span>
+          </div>
+        )}
+        {communityFiltered.map(food=>(
+          <div key={food.id} className="food-item" onClick={()=>setSelected(food)}
+            style={{borderLeft:'3px solid var(--orange)',marginLeft:0,paddingLeft:13}}>
+            <div className="food-icon"><span>{food.icon}</span></div>
+            <div className="food-info">
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <div className="food-name">{food.name}</div>
+                <span style={{fontSize:10,fontWeight:700,color:'var(--orange)',background:'var(--orange-dim)',borderRadius:4,padding:'1px 5px'}}>COMMUNITY</span>
+              </div>
+              {food.brand && <div style={{fontSize:11,color:'var(--muted)',marginBottom:2}}>{food.brand}</div>}
+              <div className="food-meta">{food.srv} · by {food.uploadedBy}</div>
+              <div style={{display:'flex',gap:4,marginTop:4}}>
+                <span className="macro-pill pill-p">P{food.p}g</span>
+                <span className="macro-pill pill-c">C{food.c}g</span>
+                <span className="macro-pill pill-f">F{food.f}g</span>
+              </div>
+            </div>
+            <div className="food-cal">{food.cal}</div>
+          </div>
+        ))}
+
+        {/* Divider if both community and local results */}
+        {communityFiltered.length > 0 && localResults.length > 0 && (
+          <div style={{padding:'8px 16px 4px',display:'flex',alignItems:'center',gap:6}}>
+            <span style={{fontSize:11,fontWeight:700,color:'var(--subtext)',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'1px'}}>📦 FOOD DATABASE</span>
+          </div>
+        )}
+
+        {showEmpty && (
           <div className="empty-state">
             <div className="empty-state-icon"><Icon name="search" size={24} color="var(--muted)"/></div>
             <div style={{fontSize:15,fontWeight:600,marginBottom:4}}>No foods found</div>
-            <div style={{fontSize:13}}>Try a different search</div>
+            <div style={{fontSize:13,marginBottom:12}}>Try a different search or create a custom food</div>
+            <button onClick={()=>setShowCustom(true)} style={{
+              background:'var(--orange)',border:'none',borderRadius:10,padding:'10px 18px',
+              color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,cursor:'pointer'
+            }}>+ Create Custom Food</button>
           </div>
         )}
-        {results.slice(0,60).map(food=>(
+        {localResults.slice(0,60).map(food=>(
           <div key={food.id} className="food-item" onClick={()=>setSelected(food)}>
             <div className="food-icon"><span>{food.icon}</span></div>
             <div className="food-info">
@@ -1068,7 +1259,24 @@ function SearchTab({defaultMeal, onAdd}) {
           </div>
         ))}
       </div>
-      {selected && <AddFoodModal food={selected} defaultMeal={defaultMeal} onAdd={(qty,meal)=>{onAdd(selected,qty,meal);setSelected(null);}} onClose={()=>setSelected(null)}/>}
+
+      {selected && (
+        <AddFoodModal
+          food={selected} defaultMeal={defaultMeal}
+          onAdd={(qty,meal)=>{
+            selected.community ? handleAddCommunityFood(selected,qty,meal) : onAdd(selected,qty,meal);
+            setSelected(null);
+          }}
+          onClose={()=>setSelected(null)}
+        />
+      )}
+      {showCustom && (
+        <CustomFoodModal
+          profileId={profileId} profileName={profileName}
+          onSave={handleCustomSaved}
+          onClose={()=>setShowCustom(false)}
+        />
+      )}
     </div>
   );
 }
