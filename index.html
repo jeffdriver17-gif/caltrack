@@ -367,8 +367,15 @@ function ProfileScreen({onSelect}) {
 
   useEffect(()=>{
     async function load(){
-      const res = await sb.from('ct_profiles').select('*');
-      setProfiles(res.data||[]);
+      try {
+        const timeout = new Promise(resolve => setTimeout(resolve, 10000));
+        const fetch = sb.from('ct_profiles').select('*');
+        const res = await Promise.race([fetch, timeout.then(()=>({data:[],error:'timeout'}))]);
+        setProfiles(res.data||[]);
+      } catch(err) {
+        console.error('Profile load error:', err);
+        setProfiles([]);
+      }
     }
     load();
   },[]);
@@ -514,29 +521,40 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   useEffect(()=>{
     async function loadAll() {
       setSyncing(true);
-      const [logsRes, recipesRes, goalsRes, waterRes] = await Promise.all([
-        sb.from('ct_food_logs').select('*').eq('profile_id', profileId),
-        sb.from('ct_recipes').select('*').eq('profile_id', profileId),
-        sb.from('ct_goals').select('*').eq('profile_id', profileId).single(),
-        sb.from('ct_water').select('*').eq('profile_id', profileId),
-      ]);
-      // Build log dict: {date: [entries]}
-      const logDict = {};
-      for(const row of (logsRes.data||[])){
-        const e = {id:row.id,foodId:row.food_id,name:row.name,srv:row.srv,qty:row.qty,
-          cal:row.cal,p:row.p,c:row.c,f:row.f,meal:row.meal,time:row.time};
-        if(!logDict[row.date]) logDict[row.date]=[];
-        logDict[row.date].push(e);
+      try {
+        // Timeout safety: if Supabase doesn't respond in 10s, proceed anyway
+        const timeout = new Promise(resolve => setTimeout(resolve, 10000));
+        const fetchAll = Promise.all([
+          sb.from('ct_food_logs').select('*').eq('profile_id', profileId),
+          sb.from('ct_recipes').select('*').eq('profile_id', profileId),
+          sb.from('ct_goals').select('*').eq('profile_id', profileId).single(),
+          sb.from('ct_water').select('*').eq('profile_id', profileId),
+        ]);
+        const result = await Promise.race([fetchAll, timeout.then(()=>null)]);
+        if(result) {
+          const [logsRes, recipesRes, goalsRes, waterRes] = result;
+          // Build log dict: {date: [entries]}
+          const logDict = {};
+          for(const row of (logsRes.data||[])){
+            const e = {id:row.id,foodId:row.food_id,name:row.name,srv:row.srv,qty:row.qty,
+              cal:row.cal,p:row.p,c:row.c,f:row.f,meal:row.meal,time:row.time};
+            if(!logDict[row.date]) logDict[row.date]=[];
+            logDict[row.date].push(e);
+          }
+          setLog(logDict);
+          setRecipes((recipesRes.data||[]).map(r=>({id:r.id,name:r.name,servings:r.servings,
+            cal:r.cal,p:r.p,c:r.c,f:r.f,ingredients:r.ingredients||[]})));
+          if(goalsRes.data) setGoals({calories:goalsRes.data.calories,protein:goalsRes.data.protein,
+            carbs:goalsRes.data.carbs,fat:goalsRes.data.fat});
+          const waterDict = {};
+          for(const row of (waterRes.data||[])) waterDict[row.date]=row.glasses;
+          setWater(waterDict);
+        }
+      } catch(err) {
+        console.error('CalTrack load error:', err);
+      } finally {
+        setSyncing(false);
       }
-      setLog(logDict);
-      setRecipes((recipesRes.data||[]).map(r=>({id:r.id,name:r.name,servings:r.servings,
-        cal:r.cal,p:r.p,c:r.c,f:r.f,ingredients:r.ingredients||[]})));
-      if(goalsRes.data) setGoals({calories:goalsRes.data.calories,protein:goalsRes.data.protein,
-        carbs:goalsRes.data.carbs,fat:goalsRes.data.fat});
-      const waterDict = {};
-      for(const row of (waterRes.data||[])) waterDict[row.date]=row.glasses;
-      setWater(waterDict);
-      setSyncing(false);
     }
     loadAll();
   },[profileId]);
