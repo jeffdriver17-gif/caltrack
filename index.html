@@ -468,9 +468,10 @@ function PinPad({value, onChange, maxLen=6}) {
 
 function ProfileScreen({onSelect}) {
   const [profiles, setProfiles] = useState([]);
-  const [view, setView] = useState('list');          // 'list' | 'login' | 'create'
+  const [view, setView] = useState('list');          // 'list' | 'signin' | 'login' | 'create'
   const [loginProfile, setLoginProfile] = useState(null);
   const [pinEntry, setPinEntry] = useState('');
+  const [usernameEntry, setUsernameEntry] = useState('');
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState(PROFILE_EMOJIS[0]);
   const [newPin, setNewPin] = useState('');
@@ -524,14 +525,82 @@ function ProfileScreen({onSelect}) {
     }
   }
 
-  // Auto-submit when PIN reaches correct length
+  // Auto-submit when PIN reaches correct length (PIN pad flow only)
   useEffect(()=>{
-    if(loginProfile && pinEntry.length >= 4) {
+    if(loginProfile && view==='login' && pinEntry.length >= 4) {
       doLogin();
     }
   },[pinEntry]);
 
-  // ── Login view ──
+  // ── Username + PIN sign-in ──
+  async function doSignIn() {
+    if(!usernameEntry.trim()){setErr('Enter your username');return;}
+    if(!pinEntry){setErr('Enter your PIN');return;}
+    setBusy(true);
+    setErr('');
+    const match = profiles.find(p => p.name.toLowerCase()===usernameEntry.trim().toLowerCase());
+    if(!match){setErr('Username not found');setBusy(false);return;}
+    const hash = await hashPin(pinEntry);
+    if(hash===match.pin_hash){
+      localStorage.setItem('ct_active',JSON.stringify({id:match.id,name:match.name,emoji:match.emoji}));
+      onSelect({id:match.id,name:match.name,emoji:match.emoji});
+    } else {
+      setErr('Wrong PIN — try again');
+      setPinEntry('');
+      setBusy(false);
+    }
+  }
+
+  // ── Sign-in form view ──
+  if(view==='signin') return (
+    <div className="profile-screen">
+      <div className="profile-hero">
+        <div className="profile-logo">🥗</div>
+        <div className="profile-app-name">CalTrack</div>
+        <div className="profile-tagline">Sign in to your account</div>
+      </div>
+      <div className="profile-body">
+        <div style={{marginBottom:14}}>
+          <div className="form-label">Username</div>
+          <input
+            type="text" autoCapitalize="none" autoCorrect="off" spellCheck="false"
+            placeholder="Enter your name"
+            value={usernameEntry}
+            onChange={e=>{setUsernameEntry(e.target.value);setErr('');}}
+            onKeyDown={e=>{if(e.key==='Enter')document.getElementById('pin-input')?.focus();}}
+            style={{background:'var(--surface-2)',border:'1.5px solid var(--border-strong)',borderRadius:12,
+              padding:'14px 16px',fontSize:16,width:'100%',outline:'none',color:'var(--text)',
+              fontFamily:"'Barlow',sans-serif"}}
+          />
+        </div>
+        <div style={{marginBottom:6}}>
+          <div className="form-label">PIN</div>
+          <input
+            id="pin-input"
+            type="password" inputMode="numeric"
+            placeholder="••••"
+            value={pinEntry}
+            onChange={e=>{setPinEntry(e.target.value.replace(/\D/g,''));setErr('');}}
+            onKeyDown={e=>{if(e.key==='Enter')doSignIn();}}
+            style={{background:'var(--surface-2)',border:'1.5px solid var(--border-strong)',borderRadius:12,
+              padding:'14px 16px',fontSize:20,width:'100%',outline:'none',color:'var(--text)',
+              letterSpacing:'6px'}}
+          />
+        </div>
+        {err && <div style={{color:'var(--red)',fontSize:13,marginBottom:10,marginTop:4}}>{err}</div>}
+        <button className="btn btn-primary btn-block" style={{marginTop:16,fontSize:17,padding:'15px'}}
+          onClick={doSignIn} disabled={busy}>
+          {busy ? 'Signing in…' : 'Sign In →'}
+        </button>
+        <button className="btn btn-secondary btn-block" style={{marginTop:10}}
+          onClick={()=>{setView('list');setErr('');setUsernameEntry('');setPinEntry('');}}>
+          ← Back
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Login view (PIN pad — kept as fallback) ──
   if(view==='login' && loginProfile) return (
     <div className="profile-screen">
       <div className="profile-hero">
@@ -645,7 +714,7 @@ function ProfileScreen({onSelect}) {
 
         {profiles.length > 0 && (
           <button className="btn btn-primary btn-block" style={{marginBottom:12,fontSize:18,padding:'16px',letterSpacing:'0.5px'}}
-            onClick={()=>setView('select')}>
+            onClick={()=>{setErr('');setUsernameEntry('');setPinEntry('');setView('signin');}}>
             Sign In →
           </button>
         )}
