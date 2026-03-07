@@ -359,9 +359,48 @@ function Icon({name, size=22, color='currentColor', strokeWidth=2}) {
   );
 }
 
+function PinPad({value, onChange, maxLen=6}) {
+  const digits = [1,2,3,4,5,6,7,8,9,'',0,'⌫'];
+  return (
+    <div>
+      {/* dots */}
+      <div style={{display:'flex',justifyContent:'center',gap:14,marginBottom:24}}>
+        {Array.from({length:maxLen}).map((_,i)=>(
+          <div key={i} style={{width:14,height:14,borderRadius:'50%',
+            background: i < value.length ? 'var(--orange)' : 'var(--surface-2)',
+            border:'2px solid '+(i < value.length ? 'var(--orange)' : 'var(--border-strong)'),
+            transition:'all 0.15s'}}/>
+        ))}
+      </div>
+      {/* grid */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+        {digits.map((d,i)=>{
+          if(d==='') return <div key={i}/>;
+          const isBack = d==='⌫';
+          return (
+            <button key={i} onClick={()=>{
+              if(isBack) onChange(value.slice(0,-1));
+              else if(value.length < maxLen) onChange(value+d);
+            }} style={{
+              height:56,borderRadius:14,fontSize:isBack?22:20,fontWeight:700,
+              fontFamily:"'Barlow Condensed',sans-serif",
+              background: isBack ? 'var(--surface-2)' : 'var(--surface)',
+              border:'1.5px solid var(--border)',color:'var(--text)',
+              cursor:'pointer',transition:'all 0.1s',letterSpacing:0,
+              WebkitTapHighlightColor:'transparent'
+            }}>{d}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ProfileScreen({onSelect}) {
   const [profiles, setProfiles] = useState([]);
-  const [view, setView] = useState('list');
+  const [view, setView] = useState('list');          // 'list' | 'login' | 'create'
+  const [loginProfile, setLoginProfile] = useState(null);
+  const [pinEntry, setPinEntry] = useState('');
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState(PROFILE_EMOJIS[0]);
   const [newPin, setNewPin] = useState('');
@@ -398,25 +437,50 @@ function ProfileScreen({onSelect}) {
       localStorage.setItem('ct_active',JSON.stringify({id:p.id,name:p.name,emoji:p.emoji}));
       onSelect({id:p.id,name:p.name,emoji:p.emoji});
     }else{
-      setErr('Failed to create');
+      setErr('Failed to create — check connection and try again');
       setBusy(false);
     }
   }
 
-  function startLogin(p) {
-    setErr('');
-    const pinInput = prompt(`Enter PIN for ${p.name}:`);
-    if(!pinInput) return;
-    hashPin(pinInput).then(async hash=>{
-      if(hash===p.pin_hash) {
-        localStorage.setItem('ct_active',JSON.stringify({id:p.id,name:p.name,emoji:p.emoji}));
-        onSelect({id:p.id,name:p.name,emoji:p.emoji});
-      } else {
-        alert('Wrong PIN');
-      }
-    });
+  async function doLogin() {
+    if(!loginProfile) return;
+    const hash = await hashPin(pinEntry);
+    if(hash === loginProfile.pin_hash) {
+      localStorage.setItem('ct_active',JSON.stringify({id:loginProfile.id,name:loginProfile.name,emoji:loginProfile.emoji}));
+      onSelect({id:loginProfile.id,name:loginProfile.name,emoji:loginProfile.emoji});
+    } else {
+      setErr('Wrong PIN — try again');
+      setPinEntry('');
+    }
   }
 
+  // Auto-submit when PIN reaches correct length
+  useEffect(()=>{
+    if(loginProfile && pinEntry.length >= 4) {
+      doLogin();
+    }
+  },[pinEntry]);
+
+  // ── Login view ──
+  if(view==='login' && loginProfile) return (
+    <div className="profile-screen">
+      <div className="profile-logo">{loginProfile.emoji}</div>
+      <div className="profile-app-name">Hey, {loginProfile.name}!</div>
+      <div className="profile-tagline">Enter your PIN to sign in</div>
+      <div className="profile-card">
+        <PinPad value={pinEntry} onChange={v=>{setPinEntry(v);setErr('');}} maxLen={6}/>
+        {err && <div style={{color:'var(--red)',fontSize:13,textAlign:'center',marginTop:12}}>{err}</div>}
+        <button className="btn btn-primary btn-block" style={{marginTop:20}} onClick={doLogin} disabled={pinEntry.length<4}>
+          Sign In →
+        </button>
+        <button className="btn btn-secondary btn-block" style={{marginTop:10}} onClick={()=>{setView('list');setPinEntry('');setErr('');}}>
+          ← Back
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Create view ──
   if(view==='create') return (
     <div className="profile-screen">
       <div className="profile-logo">🥗</div>
@@ -468,13 +532,13 @@ function ProfileScreen({onSelect}) {
             <div className="profile-card-title">👋 Who's tracking today?</div>
             <div className="profile-list">
               {profiles.map(p=>(
-                <button key={p.id} className="profile-btn" onClick={()=>startLogin(p)}>
+                <button key={p.id} className="profile-btn" onClick={()=>{setLoginProfile(p);setPinEntry('');setErr('');setView('login');}}>
                   <div className="profile-btn-emoji">{p.emoji}</div>
                   <div className="profile-btn-info">
                     <div className="profile-btn-name">{p.name}</div>
-                    <div className="profile-btn-sub">Tap to enter PIN</div>
+                    <div className="profile-btn-sub">Tap to sign in</div>
                   </div>
-                  <span className="profile-btn-arrow">›</span>
+                  <span style={{color:'var(--orange)',fontSize:20,fontWeight:700}}>›</span>
                 </button>
               ))}
             </div>
@@ -487,7 +551,7 @@ function ProfileScreen({onSelect}) {
         ) : (
           <div className="profile-card-title" style={{marginBottom:16}}>✨ Create your first profile</div>
         )}
-        <button className="btn btn-primary btn-block" onClick={()=>{setErr('');setView('create');}}>+ New Profile</button>
+        <button className="btn btn-primary btn-block" onClick={()=>{setErr('');setNewName('');setNewPin('');setNewPin2('');setView('create');}}>+ New Profile</button>
       </div>
     </div>
   );
