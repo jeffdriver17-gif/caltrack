@@ -11,6 +11,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.4/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -136,6 +137,17 @@
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const SUPA_URL  = 'https://dxatxwpgtcpasxnshkhx.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4YXR4d3BndGNwYXN4bnNoa2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNzEyMDgsImV4cCI6MjA4Nzk0NzIwOH0.iT7WZ1J3okxX_KsjfxXJnRp83a61Lo39ngN9lR2SpOw';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Simple PIN hash (SHA-256 via SubtleCrypto)
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 
 const FOODS = [
   {id:1,name:'Apple',cat:'Fruits',icon:'🍎',srv:'1 medium (182g)',cal:95,p:0.5,c:25,f:0.3},
@@ -385,101 +397,184 @@ function CircularProgress({value, max, size=150, stroke=13, color='#10b981', chi
 
 const PROFILE_EMOJIS = ['😀','😎','🤩','🥳','💪','🏃','🧘','🥗','🍎','🥦','🔥','⚡','🌟','🦁','🐼','🦊','🐸','🦋','🌈','🎯'];
 
+// ── Profile / Login Screen (Supabase-backed) ──────────────────────────────────
 function ProfileScreen({onSelect}) {
-  const [profiles, setProfiles] = React.useState(()=>{ try{return JSON.parse(localStorage.getItem('ct_profiles')||'[]')}catch(e){return []} });
-  const [newName, setNewName] = React.useState('');
-  const [newEmoji, setNewEmoji] = React.useState('😀');
-  const nameRef = React.useRef(null);
+  const [profiles, setProfiles]   = React.useState([]);
+  const [loading, setLoading]     = React.useState(true);
+  const [view, setView]           = React.useState('list'); // 'list' | 'login' | 'create'
+  const [selected, setSelected]   = React.useState(null);
+  const [pin, setPin]             = React.useState('');
+  const [newName, setNewName]     = React.useState('');
+  const [newEmoji, setNewEmoji]   = React.useState('😀');
+  const [newPin, setNewPin]       = React.useState('');
+  const [newPin2, setNewPin2]     = React.useState('');
+  const [err, setErr]             = React.useState('');
+  const [busy, setBusy]           = React.useState(false);
 
-  function getLogCount(profileId) {
-    try {
-      const l = JSON.parse(localStorage.getItem('ct_log_'+profileId)||'{}');
-      return Object.values(l).flat().length;
-    } catch(e){ return 0; }
+  React.useEffect(()=>{ loadProfiles(); },[]);
+
+  async function loadProfiles() {
+    setLoading(true);
+    const { data } = await sb.from('ct_profiles').select('id,name,emoji').order('created_at');
+    setProfiles(data||[]);
+    setLoading(false);
   }
 
-  function createProfile() {
+  function startLogin(p) { setSelected(p); setPin(''); setErr(''); setView('login'); }
+
+  async function doLogin() {
+    if(!pin) return setErr('Enter your PIN');
+    setBusy(true); setErr('');
+    const h = await hashPin(pin);
+    const { data } = await sb.from('ct_profiles').select('id,name,emoji').eq('id', selected.id).eq('pin_hash', h).single();
+    setBusy(false);
+    if(!data) return setErr('Wrong PIN — try again');
+    localStorage.setItem('ct_active', JSON.stringify(data));
+    onSelect(data);
+  }
+
+  async function doCreate() {
     const name = newName.trim();
-    if(!name) return;
-    const p = {id: Math.random().toString(36).slice(2,10), name, emoji: newEmoji};
-    const updated = [...profiles, p];
-    localStorage.setItem('ct_profiles', JSON.stringify(updated));
-    setProfiles(updated);
-    setNewName('');
-    onSelect(p);
+    if(!name) return setErr('Enter a name');
+    if(newPin.length < 4) return setErr('PIN must be at least 4 digits');
+    if(newPin !== newPin2) return setErr('PINs do not match');
+    setBusy(true); setErr('');
+    const pin_hash = await hashPin(newPin);
+    const { data, error } = await sb.from('ct_profiles').insert({name, emoji:newEmoji, pin_hash}).select('id,name,emoji').single();
+    setBusy(false);
+    if(error) return setErr('Error creating profile — try again');
+    localStorage.setItem('ct_active', JSON.stringify(data));
+    onSelect(data);
   }
 
-  function deleteProfile(id, e) {
-    e.stopPropagation();
-    if(!confirm('Delete this profile and all its data?')) return;
-    ['ct_log_','ct_recipes_','ct_goals_','ct_water_'].forEach(k=>localStorage.removeItem(k+id));
-    const updated = profiles.filter(p=>p.id!==id);
-    localStorage.setItem('ct_profiles', JSON.stringify(updated));
-    setProfiles(updated);
-  }
+  if(loading) return (
+    <div className="profile-screen" style={{justifyContent:'center',gap:16}}>
+      <div className="profile-logo">🥗</div>
+      <div style={{color:'white',fontSize:18,fontWeight:600}}>Loading…</div>
+    </div>
+  );
 
+  // ── PIN entry screen ──
+  if(view === 'login') return (
+    <div className="profile-screen">
+      <div className="profile-logo">🥗</div>
+      <div className="profile-app-name">CalTrack</div>
+      <div className="profile-tagline">Your personal calorie & macro tracker</div>
+      <div className="profile-card">
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+          <span style={{fontSize:40}}>{selected.emoji}</span>
+          <div>
+            <div style={{fontSize:20,fontWeight:800}}>{selected.name}</div>
+            <div style={{fontSize:13,color:'var(--subtext)'}}>Enter your PIN to continue</div>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:12,marginBottom:16}}>
+          {[0,1,2,3].map(i=>(
+            <div key={i} style={{flex:1,height:12,borderRadius:6,background: pin.length>i ? 'var(--green)' : 'var(--border)',transition:'background 0.15s'}}/>
+          ))}
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
+          {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((k,i)=>(
+            <button key={i} onClick={()=>{
+              if(k==='⌫') setPin(p=>p.slice(0,-1));
+              else if(k!=='' && pin.length<8) setPin(p=>p+k);
+            }} style={{padding:'16px 0',fontSize:22,fontWeight:600,borderRadius:14,border:k===''?'none':'2px solid var(--border)',background:k===''?'transparent':'white',cursor:k===''?'default':'pointer',color:k==='⌫'?'var(--red)':'var(--text)'}}>
+              {k}
+            </button>
+          ))}
+        </div>
+        {err && <div style={{color:'var(--red)',fontSize:13,textAlign:'center',marginBottom:10}}>{err}</div>}
+        <button className="btn btn-primary btn-block" onClick={doLogin} disabled={busy||pin.length<4}>
+          {busy ? 'Checking…' : 'Unlock →'}
+        </button>
+        <button className="btn btn-secondary btn-block" style={{marginTop:10}} onClick={()=>{setView('list');setErr('');}}>← Back</button>
+      </div>
+    </div>
+  );
+
+  // ── Create profile screen ──
+  if(view === 'create') return (
+    <div className="profile-screen">
+      <div className="profile-logo">🥗</div>
+      <div className="profile-app-name">CalTrack</div>
+      <div className="profile-tagline">Your personal calorie & macro tracker</div>
+      <div className="profile-card">
+        <div className="profile-card-title">✨ Create your profile</div>
+        <div style={{fontSize:12,fontWeight:600,color:'var(--subtext)',marginBottom:6}}>CHOOSE AN AVATAR</div>
+        <div className="emoji-grid" style={{marginBottom:14}}>
+          {PROFILE_EMOJIS.map(e=>(
+            <button key={e} className={`emoji-option${newEmoji===e?' selected':''}`} onClick={()=>setNewEmoji(e)}>{e}</button>
+          ))}
+        </div>
+        <div style={{marginBottom:10}}>
+          <div className="form-label">YOUR NAME</div>
+          <input type="text" placeholder="e.g. Jeff" value={newName} onChange={e=>{setNewName(e.target.value);setErr('');}}
+            style={{background:'var(--bg)',border:'1.5px solid transparent',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
+          <div>
+            <div className="form-label">PIN (4+ digits)</div>
+            <input type="password" inputMode="numeric" placeholder="••••" value={newPin} onChange={e=>{setNewPin(e.target.value.replace(/\D/g,''));setErr('');}}
+              style={{background:'var(--bg)',border:'1.5px solid transparent',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
+          </div>
+          <div>
+            <div className="form-label">CONFIRM PIN</div>
+            <input type="password" inputMode="numeric" placeholder="••••" value={newPin2} onChange={e=>{setNewPin2(e.target.value.replace(/\D/g,''));setErr('');}}
+              style={{background:'var(--bg)',border:'1.5px solid transparent',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
+          </div>
+        </div>
+        {err && <div style={{color:'var(--red)',fontSize:13,marginBottom:10}}>{err}</div>}
+        <button className="btn btn-primary btn-block" onClick={doCreate} disabled={busy}>
+          {busy ? 'Creating…' : 'Create Profile →'}
+        </button>
+        <button className="btn btn-secondary btn-block" style={{marginTop:10}} onClick={()=>{setView('list');setErr('');}}>← Back</button>
+      </div>
+    </div>
+  );
+
+  // ── Profile list ──
   return (
     <div className="profile-screen">
       <div className="profile-logo">🥗</div>
       <div className="profile-app-name">CalTrack</div>
       <div className="profile-tagline">Your personal calorie & macro tracker</div>
       <div className="profile-card">
-        {profiles.length > 0 && (
+        {profiles.length > 0 ? (
           <>
             <div className="profile-card-title">👋 Who's tracking today?</div>
             <div className="profile-list">
-              {profiles.map(p => {
-                const count = getLogCount(p.id);
-                return (
-                  <button key={p.id} className="profile-btn" onClick={()=>onSelect(p)}>
-                    <div className="profile-btn-emoji">{p.emoji}</div>
-                    <div className="profile-btn-info">
-                      <div className="profile-btn-name">{p.name}</div>
-                      <div className="profile-btn-sub">{count > 0 ? `${count} food entries logged` : 'No entries yet'}</div>
-                    </div>
-                    <span className="profile-btn-arrow">›</span>
-                  </button>
-                );
-              })}
+              {profiles.map(p=>(
+                <button key={p.id} className="profile-btn" onClick={()=>startLogin(p)}>
+                  <div className="profile-btn-emoji">{p.emoji}</div>
+                  <div className="profile-btn-info">
+                    <div className="profile-btn-name">{p.name}</div>
+                    <div className="profile-btn-sub">Tap to enter PIN</div>
+                  </div>
+                  <span className="profile-btn-arrow">›</span>
+                </button>
+              ))}
             </div>
             <div className="profile-divider">
               <div className="profile-divider-line"/>
-              <div className="profile-divider-text">ADD PROFILE</div>
+              <div className="profile-divider-text">OR</div>
               <div className="profile-divider-line"/>
             </div>
           </>
+        ) : (
+          <div className="profile-card-title" style={{marginBottom:16}}>✨ Create your first profile</div>
         )}
-        {profiles.length === 0 && (
-          <div className="profile-card-title">✨ Create your first profile</div>
-        )}
-        <div className="profile-new-section">
-          <div style={{fontSize:12,fontWeight:600,color:'var(--subtext)',marginBottom:4}}>CHOOSE AN AVATAR</div>
-          <div className="emoji-grid">
-            {PROFILE_EMOJIS.map(e=>(
-              <button key={e} className={`emoji-option${newEmoji===e?' selected':''}`} onClick={()=>setNewEmoji(e)}>{e}</button>
-            ))}
-          </div>
-          <div className="profile-name-row">
-            <input ref={nameRef} className="profile-name-input" type="text" placeholder="Enter your name…" value={newName}
-              onChange={e=>setNewName(e.target.value)}
-              onKeyDown={e=>e.key==='Enter'&&createProfile()}
-              style={{background:'var(--bg)',border:'1.5px solid transparent',borderRadius:10,padding:'12px 14px',fontSize:16,color:'var(--text)',outline:'none'}}/>
-            <button className="profile-create-btn" onClick={createProfile} disabled={!newName.trim()}>Add ›</button>
-          </div>
-        </div>
+        <button className="btn btn-primary btn-block" onClick={()=>{setErr('');setView('create');}}>+ New Profile</button>
       </div>
     </div>
   );
 }
 
+// ── ProfileGate ───────────────────────────────────────────────────────────────
 function ProfileGate() {
   const [activeProfile, setActiveProfile] = React.useState(()=>{
     try{return JSON.parse(localStorage.getItem('ct_active')||'null')}catch(e){return null}
   });
-  function selectProfile(p) {
-    localStorage.setItem('ct_active', JSON.stringify(p));
-    setActiveProfile(p);
-  }
+  function selectProfile(p) { setActiveProfile(p); }
   function switchProfile() {
     localStorage.removeItem('ct_active');
     setActiveProfile(null);
@@ -491,47 +586,115 @@ function ProfileGate() {
 function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   const [tab, setTab] = useState('dashboard');
   const [date, setDate] = useState(todayStr);
-  const [log, setLog] = useState(()=>{ try{return JSON.parse(localStorage.getItem('ct_log_'+profileId)||'{}')}catch(e){return {}} });
-  const [recipes, setRecipes] = useState(()=>{ try{return JSON.parse(localStorage.getItem('ct_recipes_'+profileId)||'[]')}catch(e){return []} });
-  const [goals, setGoals] = useState(()=>{ try{return JSON.parse(localStorage.getItem('ct_goals_'+profileId)||'null')||DEFAULT_GOALS}catch(e){return DEFAULT_GOALS} });
-  const [water, setWater] = useState(()=>{ try{return JSON.parse(localStorage.getItem('ct_water_'+profileId)||'{}')}catch(e){return {}} });
+  const [log, setLog] = useState({});
+  const [recipes, setRecipes] = useState([]);
+  const [goals, setGoals] = useState(DEFAULT_GOALS);
+  const [water, setWater] = useState({});
   const [addModal, setAddModal] = useState(null);
   const [recipeModal, setRecipeModal] = useState(null);
   const [logRecipeModal, setLogRecipeModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [defaultMeal, setDefaultMeal] = useState('Breakfast');
+  const [syncing, setSyncing] = useState(true);
 
-  useEffect(()=>localStorage.setItem('ct_log_'+profileId,JSON.stringify(log)),[log]);
-  useEffect(()=>localStorage.setItem('ct_recipes_'+profileId,JSON.stringify(recipes)),[recipes]);
-  useEffect(()=>localStorage.setItem('ct_goals_'+profileId,JSON.stringify(goals)),[goals]);
-  useEffect(()=>localStorage.setItem('ct_water_'+profileId,JSON.stringify(water)),[water]);
+  // ── Load all data from Supabase on mount ──────────────────────────────────
+  useEffect(()=>{
+    async function loadAll() {
+      setSyncing(true);
+      const [logsRes, recipesRes, goalsRes, waterRes] = await Promise.all([
+        sb.from('ct_food_logs').select('*').eq('profile_id', profileId),
+        sb.from('ct_recipes').select('*').eq('profile_id', profileId),
+        sb.from('ct_goals').select('*').eq('profile_id', profileId).single(),
+        sb.from('ct_water').select('*').eq('profile_id', profileId),
+      ]);
+      // Build log dict: {date: [entries]}
+      const logDict = {};
+      for(const row of (logsRes.data||[])){
+        const e = {id:row.id,foodId:row.food_id,name:row.name,srv:row.srv,qty:row.qty,
+          cal:row.cal,p:row.p,c:row.c,f:row.f,meal:row.meal,time:row.time};
+        if(!logDict[row.date]) logDict[row.date]=[];
+        logDict[row.date].push(e);
+      }
+      setLog(logDict);
+      setRecipes((recipesRes.data||[]).map(r=>({id:r.id,name:r.name,servings:r.servings,
+        cal:r.cal,p:r.p,c:r.c,f:r.f,ingredients:r.ingredients||[]})));
+      if(goalsRes.data) setGoals({calories:goalsRes.data.calories,protein:goalsRes.data.protein,
+        carbs:goalsRes.data.carbs,fat:goalsRes.data.fat});
+      const waterDict = {};
+      for(const row of (waterRes.data||[])) waterDict[row.date]=row.glasses;
+      setWater(waterDict);
+      setSyncing(false);
+    }
+    loadAll();
+  },[profileId]);
 
   const showToast = useCallback(msg=>{ setToast(msg); setTimeout(()=>setToast(null),2000); },[]);
   const dayEntries = useMemo(()=>log[date]||[],[log,date]);
   const dayTotals = useMemo(()=>dayEntries.reduce((a,e)=>({cal:a.cal+e.cal,p:a.p+e.p,c:a.c+e.c,f:a.f+e.f}),{cal:0,p:0,c:0,f:0}),[dayEntries]);
   const waterToday = water[date]||0;
 
-  function addEntry(food, qty, meal) {
+  async function addEntry(food, qty, meal) {
     const entry = {id:uid(),foodId:food.id,name:food.name,srv:food.srv,qty,
       cal:r1(food.cal*qty),p:r1(food.p*qty),c:r1(food.c*qty),f:r1(food.f*qty),
       meal,time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})};
     setLog(prev=>({...prev,[date]:[...(prev[date]||[]),entry]}));
     showToast('Added '+food.name);
+    await sb.from('ct_food_logs').insert({id:entry.id,profile_id:profileId,date,
+      name:entry.name,srv:entry.srv,qty,cal:entry.cal,p:entry.p,c:entry.c,f:entry.f,
+      meal,time:entry.time,food_id:food.id||null});
   }
-  function removeEntry(id) { setLog(prev=>({...prev,[date]:(prev[date]||[]).filter(e=>e.id!==id)})); }
-  function saveRecipe(recipe) {
-    if(recipe.id){ setRecipes(prev=>prev.map(r=>r.id===recipe.id?recipe:r)); showToast('Recipe updated!'); }
-    else { setRecipes(prev=>[...prev,{...recipe,id:uid()}]); showToast('Recipe saved!'); }
+  async function removeEntry(id) {
+    setLog(prev=>({...prev,[date]:(prev[date]||[]).filter(e=>e.id!==id)}));
+    await sb.from('ct_food_logs').delete().eq('id',id);
   }
-  function deleteRecipe(id) { setRecipes(prev=>prev.filter(r=>r.id!==id)); showToast('Recipe deleted'); }
-  function logRecipe(recipe, qty, meal) {
+  async function saveRecipe(recipe) {
+    if(recipe.id){
+      const updated = {...recipe};
+      setRecipes(prev=>prev.map(r=>r.id===recipe.id?updated:r));
+      showToast('Recipe updated!');
+      await sb.from('ct_recipes').update({name:recipe.name,servings:recipe.servings,
+        cal:recipe.cal,p:recipe.p,c:recipe.c,f:recipe.f,ingredients:recipe.ingredients})
+        .eq('id',recipe.id);
+    } else {
+      const newR = {...recipe,id:uid()};
+      setRecipes(prev=>[...prev,newR]);
+      showToast('Recipe saved!');
+      await sb.from('ct_recipes').insert({id:newR.id,profile_id:profileId,name:newR.name,
+        servings:newR.servings,cal:newR.cal,p:newR.p,c:newR.c,f:newR.f,ingredients:newR.ingredients});
+    }
+  }
+  async function deleteRecipe(id) {
+    setRecipes(prev=>prev.filter(r=>r.id!==id));
+    showToast('Recipe deleted');
+    await sb.from('ct_recipes').delete().eq('id',id);
+  }
+  async function logRecipe(recipe, qty, meal) {
     const entry = {id:uid(),foodId:null,name:recipe.name+' (recipe)',srv:`${qty} serving${qty!==1?'s':''}`,qty,
       cal:r1(recipe.cal*qty),p:r1(recipe.p*qty),c:r1(recipe.c*qty),f:r1(recipe.f*qty),meal,
       time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})};
     setLog(prev=>({...prev,[date]:[...(prev[date]||[]),entry]}));
     showToast('Logged '+recipe.name);
+    await sb.from('ct_food_logs').insert({id:entry.id,profile_id:profileId,date,
+      name:entry.name,srv:entry.srv,qty,cal:entry.cal,p:entry.p,c:entry.c,f:entry.f,
+      meal,time:entry.time,food_id:null});
+  }
+  async function saveGoals(g) {
+    setGoals(g);
+    await sb.from('ct_goals').upsert({profile_id:profileId,calories:g.calories,
+      protein:g.protein,carbs:g.carbs,fat:g.fat,updated_at:new Date().toISOString()});
+  }
+  async function saveWater(date, glasses) {
+    setWater(prev=>({...prev,[date]:glasses}));
+    await sb.from('ct_water').upsert({profile_id:profileId,date,glasses});
   }
   function closeAll(){ setAddModal(null); setRecipeModal(null); setLogRecipeModal(null); }
+
+  if(syncing) return (
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,background:'var(--bg)'}}>
+      <span style={{fontSize:48}}>🥗</span>
+      <div style={{fontSize:15,fontWeight:600,color:'var(--subtext)'}}>Loading your data…</div>
+    </div>
+  );
 
   return (
     <div className="app">
@@ -551,10 +714,10 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
         </div>
       </div>
       <div className="scroll-area">
-        {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} setWater={setWater} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry}/>}
+        {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry}/>}
         {tab==='search' && <SearchTab defaultMeal={defaultMeal} onAdd={addEntry}/>}
         {tab==='recipes' && <RecipesTab recipes={recipes} onNew={()=>setRecipeModal({mode:'new',recipe:null})} onView={r=>setRecipeModal({mode:'view',recipe:r})} onLog={r=>setLogRecipeModal(r)}/>}
-        {tab==='settings' && <SettingsTab goals={goals} setGoals={setGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji}/>}
+        {tab==='settings' && <SettingsTab goals={goals} setGoals={saveGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji}/>}
       </div>
       <nav className="bottom-nav">
         {[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'search',icon:'🔍',label:'Log Food'},{id:'recipes',icon:'📖',label:'Recipes'},{id:'settings',icon:'⚙️',label:'Goals'}].map(n=>(
@@ -570,7 +733,7 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   );
 }
 
-function DashboardTab({date, entries, totals, goals, waterToday, setWater, onAddFood, onRemove}) {
+function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddFood, onRemove}) {
   const remaining = goals.calories - totals.cal;
   const overGoal = remaining < 0;
   return (
@@ -620,7 +783,7 @@ function DashboardTab({date, entries, totals, goals, waterToday, setWater, onAdd
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {Array.from({length:8},(_,i)=>(
             <div key={i} className={`water-btn${i<waterToday?' filled':''}`}
-              onClick={()=>setWater(prev=>({...prev,[date]:i<waterToday?i:i+1}))}>💧</div>
+              onClick={()=>onWater(i<waterToday?i:i+1)}>💧</div>
           ))}
         </div>
       </div>
