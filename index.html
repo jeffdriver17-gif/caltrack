@@ -12,6 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.4/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -82,8 +83,8 @@ input:focus { border-color: var(--orange); background: var(--surface); }
 input::placeholder { color: var(--muted); }
 
 /* Modals */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
-.modal { background: var(--surface); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; max-height: 90vh; overflow-y: auto; padding-bottom: calc(24px + var(--safe-bottom)); animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1); border-top: 1px solid var(--border-strong); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); overscroll-behavior: contain; }
+.modal { background: var(--surface); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; max-height: 92vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 0 16px calc(100px + var(--safe-bottom)); animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1); border-top: 1px solid var(--border-strong); }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .modal-handle { width: 40px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 14px auto 18px; }
 .modal-header { padding: 0 16px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
@@ -1019,80 +1020,151 @@ function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddF
   );
 }
 
+function parseLabelText(text) {
+  const t = text.replace(/\s+/g,' ');
+  function grab(patterns) {
+    for(const rx of patterns){const m=t.match(rx);if(m)return parseFloat(m[1]);}
+    return null;
+  }
+  return {
+    cal: grab([/calories[^0-9]*([0-9]+)/i,/([0-9]+)\s*cal(?:ories)?/i]),
+    p:   grab([/protein[^0-9]*([0-9]+\.?[0-9]*)\s*g/i]),
+    c:   grab([/total carbohydrate[^0-9]*([0-9]+\.?[0-9]*)\s*g/i,/carbohydrate[^0-9]*([0-9]+\.?[0-9]*)\s*g/i]),
+    f:   grab([/total fat[^0-9]*([0-9]+\.?[0-9]*)\s*g/i,/(?<![a-z])fat[^0-9]*([0-9]+\.?[0-9]*)\s*g/i]),
+    srv: (()=>{const m=t.match(/serving size[^0-9a-z]*([0-9]+[^,\n(]{1,20})/i);return m?m[1].trim():null;})(),
+  };
+}
+
 function CustomFoodModal({onSave, onClose, profileId, profileName}) {
-  const [name, setName] = useState('');
+  const [name, setName]   = useState('');
   const [brand, setBrand] = useState('');
-  const [srv, setSrv] = useState('1 serving');
-  const [cal, setCal] = useState('');
-  const [p, setP] = useState('');
-  const [c, setC] = useState('');
-  const [f, setF] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
+  const [srv, setSrv]     = useState('1 serving');
+  const [cal, setCal]     = useState('');
+  const [p, setP]         = useState('');
+  const [c, setC]         = useState('');
+  const [f, setF]         = useState('');
+  const [busy, setBusy]   = useState(false);
+  const [err, setErr]     = useState('');
+  const [scanning, setScanning]   = useState(false);
+  const [scanMsg, setScanMsg]     = useState('');
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const fileRef = useRef(null);
+
+  async function handleScan(e) {
+    const file = e.target.files?.[0];
+    if(!file) return;
+    setPreviewUrl(URL.createObjectURL(file));
+    setScanning(true); setScanMsg('Starting scan…'); setErr('');
+    try {
+      const result = await Tesseract.recognize(file,'eng',{
+        logger: m=>{if(m.status==='recognizing text') setScanMsg(`Scanning… ${Math.round(m.progress*100)}%`);}
+      });
+      const parsed = parseLabelText(result.data.text);
+      let filled=0;
+      if(parsed.cal!=null){setCal(String(parsed.cal));filled++;}
+      if(parsed.p!=null){setP(String(parsed.p));filled++;}
+      if(parsed.c!=null){setC(String(parsed.c));filled++;}
+      if(parsed.f!=null){setF(String(parsed.f));filled++;}
+      if(parsed.srv) setSrv(parsed.srv);
+      setScanMsg(filled>0?`✓ Filled ${filled} field${filled!==1?'s':''}! Review and adjust.`:'Could not read values — fill in manually.');
+    } catch(ex){ setScanMsg('Scan failed — please fill in manually.'); }
+    setScanning(false);
+    e.target.value='';
+  }
 
   async function handleSave() {
     if(!name.trim()){setErr('Food name required');return;}
     if(!cal||isNaN(parseFloat(cal))){setErr('Calories required');return;}
     setBusy(true);
     const food = {
-      id: uid(), profile_id: profileId, uploaded_by: profileName,
-      name: name.trim(), brand: brand.trim(), category: 'Custom',
-      srv: srv.trim()||'1 serving',
-      cal: parseFloat(cal)||0, p: parseFloat(p)||0,
-      c: parseFloat(c)||0, f: parseFloat(f)||0,
-      uses: 1
+      id:uid(), profile_id:profileId, uploaded_by:profileName,
+      name:name.trim(), brand:brand.trim(), category:'Custom',
+      srv:srv.trim()||'1 serving',
+      cal:parseFloat(cal)||0, p:parseFloat(p)||0,
+      c:parseFloat(c)||0,     f:parseFloat(f)||0, uses:1
     };
     const {error} = await sb.from('ct_community_foods').insert(food);
     if(error){setErr('Failed to save — try again');setBusy(false);return;}
-    onSave({...food, icon:'⭐', cat:'Custom', community:true});
+    onSave({...food,icon:'⭐',cat:'Custom',community:true});
   }
 
-  const inputStyle = {background:'var(--surface-2)',border:'1.5px solid var(--border)',borderRadius:10,
+  const iStyle = {background:'var(--surface-2)',border:'1.5px solid var(--border)',borderRadius:10,
     padding:'11px 13px',fontSize:15,width:'100%',outline:'none',color:'var(--text)',fontFamily:"'Barlow',sans-serif"};
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800}}>Create Custom Food</div>
-          <button onClick={onClose} style={{background:'none',border:'none',color:'var(--subtext)',fontSize:22,cursor:'pointer',padding:4}}>✕</button>
+          <button onClick={onClose} style={{background:'none',border:'none',color:'var(--subtext)',fontSize:22,cursor:'pointer',lineHeight:1}}>✕</button>
         </div>
+
+        {/* Scan button */}
+        <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={handleScan}/>
+        <button onClick={()=>fileRef.current?.click()} disabled={scanning} style={{
+          width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:10,
+          padding:'13px',borderRadius:14,marginBottom:12,cursor:scanning?'default':'pointer',
+          background:scanning?'var(--surface-2)':'linear-gradient(135deg,#1a0d00,#2a1800)',
+          border:'1.5px solid '+(scanning?'var(--border)':'var(--orange)'),
+          color:scanning?'var(--muted)':'var(--orange)',
+          fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,letterSpacing:'0.5px'}}>
+          <span style={{fontSize:20}}>📷</span>
+          {scanning ? scanMsg : 'Scan Nutrition Label'}
+        </button>
+
+        {previewUrl && (
+          <div style={{marginBottom:10,borderRadius:12,overflow:'hidden',border:'1px solid var(--border)',position:'relative',maxHeight:130}}>
+            <img src={previewUrl} style={{width:'100%',objectFit:'cover',display:'block'}} alt="label preview"/>
+            {scanning && <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.65)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--orange)',fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14}}>{scanMsg}</div>}
+          </div>
+        )}
+        {!scanning && scanMsg && (
+          <div style={{marginBottom:12,padding:'9px 12px',borderRadius:10,fontSize:12,fontWeight:600,
+            background:scanMsg.startsWith('✓')?'var(--green-dim)':'var(--surface-2)',
+            color:scanMsg.startsWith('✓')?'var(--green)':'var(--subtext)',
+            border:'1px solid '+(scanMsg.startsWith('✓')?'rgba(34,197,94,0.25)':'var(--border)')}}>
+            {scanMsg}
+          </div>
+        )}
+
+        <div style={{height:1,background:'var(--border)',margin:'4px 0 14px'}}/>
 
         <div style={{marginBottom:10}}>
           <div className="form-label">Food Name *</div>
-          <input placeholder="e.g. My Special Noodle" value={name} onChange={e=>{setName(e.target.value);setErr('');}} style={inputStyle}/>
+          <input placeholder="e.g. My Special Noodle" value={name} onChange={e=>{setName(e.target.value);setErr('');}} style={iStyle}/>
         </div>
         <div style={{marginBottom:10}}>
           <div className="form-label">Brand / Description</div>
-          <input placeholder="e.g. Homemade, Brand X..." value={brand} onChange={e=>setBrand(e.target.value)} style={inputStyle}/>
+          <input placeholder="e.g. Homemade, Brand X..." value={brand} onChange={e=>setBrand(e.target.value)} style={iStyle}/>
         </div>
         <div style={{marginBottom:14}}>
           <div className="form-label">Serving Size</div>
-          <input placeholder="e.g. 1 cup, 100g, 1 serving" value={srv} onChange={e=>setSrv(e.target.value)} style={inputStyle}/>
+          <input placeholder="e.g. 1 cup, 100g, 1 serving" value={srv} onChange={e=>setSrv(e.target.value)} style={iStyle}/>
         </div>
 
-        <div className="form-label" style={{marginBottom:8}}>Nutrition per serving *</div>
+        <div className="form-label" style={{marginBottom:8}}>Macros per serving *</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
           <div>
             <div className="form-label">Calories *</div>
             <input type="number" inputMode="decimal" placeholder="0" value={cal} onChange={e=>{setCal(e.target.value);setErr('');}}
-              style={{...inputStyle,borderColor:'var(--orange)',background:'var(--orange-dim)'}}/>
+              style={{...iStyle,borderColor:'var(--orange)',background:'var(--orange-dim)'}}/>
           </div>
           <div>
             <div className="form-label">Protein (g)</div>
             <input type="number" inputMode="decimal" placeholder="0" value={p} onChange={e=>setP(e.target.value)}
-              style={{...inputStyle,borderColor:'rgba(59,130,246,0.4)',background:'var(--blue-dim)'}}/>
+              style={{...iStyle,borderColor:'rgba(59,130,246,0.4)',background:'var(--blue-dim)'}}/>
           </div>
           <div>
             <div className="form-label">Carbs (g)</div>
             <input type="number" inputMode="decimal" placeholder="0" value={c} onChange={e=>setC(e.target.value)}
-              style={{...inputStyle,borderColor:'rgba(245,158,11,0.4)',background:'var(--amber-dim)'}}/>
+              style={{...iStyle,borderColor:'rgba(245,158,11,0.4)',background:'var(--amber-dim)'}}/>
           </div>
           <div>
             <div className="form-label">Fat (g)</div>
             <input type="number" inputMode="decimal" placeholder="0" value={f} onChange={e=>setF(e.target.value)}
-              style={{...inputStyle,borderColor:'rgba(239,68,68,0.4)',background:'var(--red-dim)'}}/>
+              style={{...iStyle,borderColor:'rgba(239,68,68,0.4)',background:'var(--red-dim)'}}/>
           </div>
         </div>
 
@@ -1102,9 +1174,11 @@ function CustomFoodModal({onSave, onClose, profileId, profileName}) {
 
         {err && <div style={{color:'var(--red)',fontSize:13,marginBottom:10}}>{err}</div>}
 
-        <button className="btn btn-primary btn-block" onClick={handleSave} disabled={busy}>
-          {busy ? 'Uploading…' : '⬆ Upload & Add to Log'}
+        <button className="btn btn-primary btn-block" onClick={handleSave} disabled={busy||scanning}>
+          {busy?'Uploading…':'⬆ Upload & Add to Log'}
         </button>
+        {/* Bottom bumper so upload button clears the nav */}
+        <div style={{height:8}}/>
       </div>
     </div>
   );
