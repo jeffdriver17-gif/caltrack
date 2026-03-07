@@ -6,131 +6,198 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="CalTrack">
-  <meta name="theme-color" content="#10b981">
+  <meta name="theme-color" content="#0A0A0A">
   <title>CalTrack</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.4/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --green: #10b981; --green-light: #d1fae5; --green-dark: #059669;
-      --blue: #3b82f6; --blue-light: #dbeafe;
-      --amber: #f59e0b; --amber-light: #fef3c7;
-      --red: #ef4444; --red-light: #fee2e2;
-      --bg: #f3f4f6; --card: #ffffff;
-      --text: #111827; --subtext: #6b7280; --border: #e5e7eb;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-    }
-    html, body { height: 100%; background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; color: var(--text); -webkit-tap-highlight-color: transparent; }
-    #root { height: 100%; display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; }
-    .app { display: flex; flex-direction: column; height: 100%; background: var(--bg); }
-    .scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: calc(80px + var(--safe-bottom)); }
-    .header { background: var(--card); border-bottom: 1px solid var(--border); padding: calc(12px + var(--safe-top)) 16px 12px; position: sticky; top: 0; z-index: 50; }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; }
-    .date-nav { display: flex; align-items: center; gap: 8px; }
-    .date-btn { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border); background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: var(--subtext); }
-    .date-btn:active { background: var(--bg); }
-    .date-label { font-size: 15px; font-weight: 600; min-width: 80px; text-align: center; cursor: pointer; }
-    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: var(--card); border-top: 1px solid var(--border); display: flex; padding-bottom: var(--safe-bottom); z-index: 50; }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; cursor: pointer; gap: 3px; border: none; background: none; color: var(--subtext); }
-    .nav-item.active { color: var(--green); }
-    .nav-item span { font-size: 11px; font-weight: 500; }
-    .nav-icon { font-size: 22px; line-height: 1; }
-    .card { background: var(--card); border-radius: 16px; padding: 16px; margin: 0 12px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; padding: 12px 18px; }
-    .btn:active { opacity: 0.8; }
-    .btn-primary { background: var(--green); color: white; }
-    .btn-secondary { background: var(--bg); color: var(--text); }
-    .btn-danger { background: var(--red-light); color: var(--red); }
-    .btn-block { width: 100%; }
-    .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; }
-    input[type="text"], input[type="number"], input[type="search"] { background: var(--bg); border: 1.5px solid transparent; border-radius: 10px; padding: 12px 14px; font-size: 16px; width: 100%; color: var(--text); outline: none; -webkit-appearance: none; }
-    input:focus { border-color: var(--green); background: white; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
-    .modal { background: var(--card); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; max-height: 90vh; overflow-y: auto; padding-bottom: calc(20px + var(--safe-bottom)); animation: slideUp 0.25s ease; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 16px; }
-    .modal-header { padding: 0 16px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
-    .modal-title { font-size: 17px; font-weight: 700; }
-    .modal-close { width: 32px; height: 32px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--subtext); }
-    .food-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border); cursor: pointer; background: white; }
-    .food-item:active { background: var(--bg); }
-    .food-item:last-child { border-bottom: none; }
-    .food-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .food-info { flex: 1; min-width: 0; }
-    .food-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .food-meta { font-size: 12px; color: var(--subtext); margin-top: 2px; }
-    .food-cal { font-size: 14px; font-weight: 700; color: var(--green); flex-shrink: 0; }
-    .macro-pill { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 3px 7px; border-radius: 6px; }
-    .pill-p { background: var(--blue-light); color: var(--blue); }
-    .pill-c { background: var(--amber-light); color: var(--amber); }
-    .pill-f { background: var(--red-light); color: var(--red); }
-    .pill-cal { background: var(--green-light); color: var(--green-dark); }
-    .progress-bar { height: 8px; border-radius: 4px; background: var(--bg); overflow: hidden; }
-    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
-    .chip { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--border); background: white; cursor: pointer; white-space: nowrap; }
-    .chip.active { background: var(--green); color: white; border-color: var(--green); }
-    .chips-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 12px 4px; scrollbar-width: none; }
-    .chips-row::-webkit-scrollbar { display: none; }
-    .log-entry { display: flex; align-items: center; padding: 10px 0; gap: 10px; border-bottom: 1px solid var(--bg); }
-    .log-entry:last-child { border-bottom: none; }
-    .log-entry-info { flex: 1; min-width: 0; }
-    .log-entry-name { font-size: 14px; font-weight: 500; }
-    .log-entry-meta { font-size: 12px; color: var(--subtext); }
-    .delete-btn { width: 28px; height: 28px; border-radius: 50%; background: var(--red-light); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--red); font-size: 14px; flex-shrink: 0; }
-    .ring-container { position: relative; }
-    .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .ring-cal { font-size: 28px; font-weight: 800; line-height: 1; }
-    .ring-label { font-size: 11px; color: var(--subtext); margin-top: 2px; font-weight: 500; }
-    .empty-state { text-align: center; padding: 32px 16px; color: var(--subtext); }
-    .form-label { font-size: 13px; font-weight: 600; color: var(--subtext); margin-bottom: 6px; }
-    .add-row-btn { display: flex; align-items: center; gap: 6px; padding: 8px 0; cursor: pointer; color: var(--green); font-size: 14px; font-weight: 600; border: none; background: none; }
-    .recipe-card { background: var(--card); border-radius: 14px; padding: 14px 16px; margin: 0 12px 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    .recipe-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-    .toast { position: fixed; top: calc(70px + var(--safe-top)); left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; z-index: 200; animation: fadeInOut 2s ease forwards; white-space: nowrap; }
-    @keyframes fadeInOut { 0%{opacity:0;transform:translateX(-50%) translateY(-8px)} 15%{opacity:1;transform:translateX(-50%) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
-    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
-    .settings-row:last-child { border-bottom: none; }
-    .settings-label { font-size: 15px; font-weight: 500; }
-    .settings-input { width: 90px; text-align: right; font-size: 15px; font-weight: 600; background: var(--bg); border: 1.5px solid transparent; border-radius: 8px; padding: 6px 10px; outline: none; }
-    .settings-input:focus { border-color: var(--green); background: white; }
-    .water-btn { width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--border); background: white; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .water-btn.filled { background: var(--blue-light); border-color: var(--blue); }
-    .meal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .meal-title { font-size: 15px; font-weight: 700; }
-    /* Profile / Login Screen */
-    .profile-screen { min-height: 100vh; background: linear-gradient(150deg, #10b981 0%, #059669 60%, #047857 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; }
-    .profile-logo { font-size: 72px; margin-bottom: 10px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2)); }
-    .profile-app-name { font-size: 34px; font-weight: 900; color: white; letter-spacing: -0.5px; }
-    .profile-tagline { font-size: 14px; color: rgba(255,255,255,0.75); margin-bottom: 32px; font-weight: 500; }
-    .profile-card { background: white; border-radius: 24px; padding: 24px; width: 100%; max-width: 390px; box-shadow: 0 24px 64px rgba(0,0,0,0.25); }
-    .profile-card-title { font-size: 17px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
-    .profile-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-    .profile-btn { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--border); background: white; cursor: pointer; width: 100%; text-align: left; }
-    .profile-btn:active { background: var(--bg); }
-    .profile-btn-emoji { font-size: 30px; line-height: 1; width: 44px; height: 44px; border-radius: 12px; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .profile-btn-info { flex: 1; }
-    .profile-btn-name { font-size: 16px; font-weight: 700; color: var(--text); }
-    .profile-btn-sub { font-size: 12px; color: var(--subtext); margin-top: 1px; }
-    .profile-btn-arrow { color: var(--subtext); font-size: 20px; font-weight: 300; }
-    .profile-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
-    .profile-divider-line { flex: 1; height: 1px; background: var(--border); }
-    .profile-divider-text { font-size: 12px; font-weight: 500; color: var(--subtext); white-space: nowrap; }
-    .profile-new-section { display: flex; flex-direction: column; gap: 10px; }
-    .emoji-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-    .emoji-option { font-size: 22px; padding: 7px 4px; border-radius: 10px; border: 2px solid transparent; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
-    .emoji-option:active { transform: scale(0.92); }
-    .emoji-option.selected { border-color: var(--green); background: var(--green-light); }
-    .profile-name-row { display: flex; gap: 8px; }
-    .profile-name-input { flex: 1; }
-    .profile-create-btn { background: var(--green); color: white; border: none; border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .profile-create-btn:active { opacity: 0.8; }
-    .profile-create-btn:disabled { opacity: 0.4; cursor: default; }
-    .switch-profile-btn { display: flex; align-items: center; gap: 10px; padding: 14px 0; cursor: pointer; border: none; background: none; width: 100%; color: var(--text); }
-    .switch-profile-btn:active { opacity: 0.7; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0A0A0A; --surface: #141414; --surface-2: #1E1E1E;
+  --border: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.15);
+  --orange: #F97316; --orange-dim: rgba(249,115,22,0.12); --orange-glow: 0 0 24px rgba(249,115,22,0.35);
+  --green: #22C55E; --green-dim: rgba(34,197,94,0.12);
+  --red: #EF4444; --red-dim: rgba(239,68,68,0.12);
+  --blue: #3B82F6; --blue-dim: rgba(59,130,246,0.12);
+  --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.12);
+  --text: #F8FAFC; --subtext: #94A3B8; --muted: #475569;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html, body {
+  height: 100%; background: var(--bg);
+  font-family: 'Barlow', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text); -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+#root { height: 100%; display: flex; flex-direction: column; max-width: 430px; margin: 0 auto; position: relative; }
+.app { display: flex; flex-direction: column; height: 100%; background: var(--bg); }
+.scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: calc(80px + var(--safe-bottom)); }
+
+/* Header */
+.header { background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: calc(10px + var(--safe-top)) 16px 10px; position: sticky; top: 0; z-index: 50; }
+.header-inner { display: flex; align-items: center; justify-content: space-between; }
+.header-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: var(--orange); letter-spacing: 0.5px; }
+.date-nav { display: flex; align-items: center; gap: 6px; }
+.date-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--subtext); transition: all 0.2s; }
+.date-btn:active { background: var(--border-strong); }
+.date-label { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; min-width: 80px; text-align: center; cursor: pointer; color: var(--text); letter-spacing: 0.3px; }
+
+/* Bottom Nav */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: rgba(10,10,10,0.97); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; padding-bottom: var(--safe-bottom); z-index: 50; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px 8px; cursor: pointer; gap: 4px; border: none; background: none; color: var(--muted); transition: color 0.2s; min-height: 56px; }
+.nav-item.active { color: var(--orange); }
+.nav-item.active .nav-pip { opacity: 1; }
+.nav-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+.nav-pip { width: 4px; height: 4px; border-radius: 50%; background: var(--orange); opacity: 0; transition: opacity 0.2s; margin-top: 2px; }
+
+/* Cards */
+.card { background: var(--surface); border-radius: 18px; padding: 16px; margin: 0 12px 10px; border: 1px solid var(--border); }
+.card-flush { background: var(--surface); border-radius: 18px; overflow: hidden; margin: 0 12px 10px; border: 1px solid var(--border); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: none; border-radius: 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; padding: 13px 18px; transition: all 0.2s; min-height: 44px; }
+.btn:active { opacity: 0.8; transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+.btn-primary { background: var(--orange); color: #fff; box-shadow: var(--orange-glow); }
+.btn-primary:hover { background: #ea6500; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.btn-block { width: 100%; }
+.btn-sm { padding: 9px 14px; font-size: 13px; border-radius: 10px; min-height: 38px; }
+.btn-xs { padding: 6px 10px; font-size: 12px; border-radius: 8px; min-height: 32px; }
+
+/* Inputs */
+input[type="text"], input[type="number"], input[type="search"], input[type="password"] {
+  background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 12px; padding: 13px 16px;
+  font-size: 16px; width: 100%; color: var(--text); outline: none; -webkit-appearance: none;
+  font-family: 'Barlow', sans-serif; transition: border-color 0.2s;
+}
+input:focus { border-color: var(--orange); background: var(--surface); }
+input::placeholder { color: var(--muted); }
+
+/* Modals */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.modal { background: var(--surface); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; max-height: 90vh; overflow-y: auto; padding-bottom: calc(24px + var(--safe-bottom)); animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1); border-top: 1px solid var(--border-strong); }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: var(--border-strong); border-radius: 2px; margin: 14px auto 18px; }
+.modal-header { padding: 0 16px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+.modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; }
+.modal-close { width: 36px; height: 36px; min-width: 36px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--subtext); transition: all 0.2s; }
+.modal-close:active { background: var(--border-strong); }
+
+/* Food Items */
+.food-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border); cursor: pointer; background: var(--surface); transition: background 0.15s; }
+.food-item:active { background: var(--surface-2); }
+.food-item:last-child { border-bottom: none; }
+.food-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; background: var(--surface-2); }
+.food-info { flex: 1; min-width: 0; }
+.food-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.food-meta { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+.food-cal { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--orange); flex-shrink: 0; }
+
+/* Macro Pills */
+.macro-pill { display: inline-flex; align-items: center; gap: 3px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.2px; }
+.pill-p { background: var(--blue-dim); color: #60A5FA; }
+.pill-c { background: var(--amber-dim); color: #FCD34D; }
+.pill-f { background: var(--red-dim); color: #F87171; }
+.pill-cal { background: var(--orange-dim); color: var(--orange); }
+
+/* Progress */
+.progress-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.ring-container { position: relative; }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ring-cal { font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 800; line-height: 1; }
+.ring-label { font-size: 11px; color: var(--subtext); margin-top: 2px; font-weight: 500; font-family: 'Barlow', sans-serif; }
+
+/* Category chips */
+.chip { display: inline-flex; align-items: center; padding: 7px 14px; border-radius: 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; white-space: nowrap; color: var(--subtext); transition: all 0.2s; letter-spacing: 0.2px; }
+.chip.active { background: var(--orange-dim); color: var(--orange); border-color: rgba(249,115,22,0.4); }
+.chips-row { display: flex; gap: 8px; overflow-x: auto; padding: 0 12px 4px; scrollbar-width: none; }
+.chips-row::-webkit-scrollbar { display: none; }
+
+/* Log entries */
+.log-entry { display: flex; align-items: center; padding: 10px 0; gap: 10px; border-bottom: 1px solid var(--border); }
+.log-entry:last-child { border-bottom: none; }
+.log-entry-info { flex: 1; min-width: 0; }
+.log-entry-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.log-entry-meta { font-size: 12px; color: var(--subtext); margin-top: 1px; }
+.delete-btn { width: 32px; height: 32px; min-width: 32px; border-radius: 8px; background: var(--red-dim); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--red); transition: all 0.2s; }
+.delete-btn:active { background: rgba(239,68,68,0.25); }
+
+/* Toast */
+.toast { position: fixed; top: calc(80px + var(--safe-top)); left: 50%; transform: translateX(-50%); background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); padding: 10px 20px; border-radius: 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; z-index: 200; animation: fadeInOut 2s ease forwards; white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+@keyframes fadeInOut { 0%{opacity:0;transform:translateX(-50%) translateY(-8px)} 15%{opacity:1;transform:translateX(-50%) translateY(0)} 75%{opacity:1} 100%{opacity:0} }
+
+/* Settings */
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+.settings-label { font-size: 15px; font-weight: 500; color: var(--text); }
+.settings-input { width: 90px; text-align: right; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; background: var(--surface-2); border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 12px; outline: none; color: var(--text); transition: border-color 0.2s; }
+.settings-input:focus { border-color: var(--orange); }
+
+/* Water */
+.water-btn { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-2); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: var(--muted); }
+.water-btn.filled { background: var(--blue-dim); border-color: rgba(59,130,246,0.4); color: #60A5FA; }
+.water-btn:active { transform: scale(0.93); }
+
+/* Meal sections */
+.meal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.meal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 0.3px; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 40px 16px; color: var(--subtext); }
+.empty-state-icon { width: 56px; height: 56px; border-radius: 16px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; border: 1px solid var(--border); }
+
+/* Recipe cards */
+.recipe-card { background: var(--surface); border-radius: 16px; padding: 14px 16px; margin: 0 12px 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s; }
+.recipe-card:active { border-color: var(--border-strong); }
+.recipe-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 800; margin-bottom: 4px; letter-spacing: 0.2px; }
+.add-row-btn { display: flex; align-items: center; gap: 8px; padding: 10px 0; cursor: pointer; color: var(--orange); font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; border: none; background: none; transition: opacity 0.2s; }
+.add-row-btn:active { opacity: 0.7; }
+.form-label { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* Profile Screen */
+.profile-screen { min-height: 100vh; background: linear-gradient(150deg, #0F0F0F 0%, #0A0A0A 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; }
+.profile-logo { font-size: 56px; margin-bottom: 10px; }
+.profile-app-name { font-family: 'Barlow Condensed', sans-serif; font-size: 36px; font-weight: 900; color: var(--text); letter-spacing: 1px; }
+.profile-tagline { font-size: 14px; color: var(--subtext); margin-bottom: 28px; font-weight: 400; }
+.profile-card { background: var(--surface); border-radius: 24px; padding: 24px; width: 100%; max-width: 390px; border: 1px solid var(--border-strong); }
+.profile-card-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 16px; color: var(--text); letter-spacing: 0.3px; }
+.profile-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.profile-btn { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; width: 100%; text-align: left; transition: all 0.2s; }
+.profile-btn:active { border-color: var(--orange); background: var(--orange-dim); }
+.profile-btn-emoji { font-size: 28px; line-height: 1; width: 48px; height: 48px; border-radius: 14px; background: var(--surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--border); }
+.profile-btn-info { flex: 1; }
+.profile-btn-name { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 800; color: var(--text); }
+.profile-btn-sub { font-size: 12px; color: var(--subtext); margin-top: 1px; }
+.profile-btn-arrow { color: var(--muted); }
+.profile-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+.profile-divider-line { flex: 1; height: 1px; background: var(--border); }
+.profile-divider-text { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 1px; }
+.profile-new-section { display: flex; flex-direction: column; gap: 12px; }
+.emoji-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.emoji-option { font-size: 22px; padding: 8px 4px; border-radius: 10px; border: 1.5px solid transparent; background: var(--surface-2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; min-height: 44px; }
+.emoji-option:active { transform: scale(0.92); }
+.emoji-option.selected { border-color: var(--orange); background: var(--orange-dim); }
+.profile-name-row { display: flex; gap: 8px; }
+.profile-name-input { flex: 1; }
+.profile-create-btn { background: var(--orange); color: white; border: none; border-radius: 12px; padding: 13px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 800; cursor: pointer; white-space: nowrap; box-shadow: var(--orange-glow); transition: all 0.2s; min-height: 44px; }
+.profile-create-btn:active { opacity: 0.8; transform: scale(0.97); }
+.profile-create-btn:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+
+/* PIN dots */
+.pin-dot { flex: 1; height: 10px; border-radius: 5px; transition: background 0.2s; }
+.pin-btn { padding: 18px 0; font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; display: flex; align-items: center; justify-content: center; min-height: 60px; transition: all 0.15s; color: var(--text); }
+.pin-btn:active { background: var(--surface); border-color: var(--orange); }
+.pin-btn-empty { border: none; background: transparent; }
+.pin-btn-del { color: var(--red); }
   </style>
 </head>
 <body>
@@ -198,186 +265,54 @@ const FOODS = [
   {id:50,name:'Granola',cat:'Grains',icon:'🥣',srv:'1/2 cup (59g)',cal:250,p:6,c:35,f:9},
   {id:51,name:'Couscous (cooked)',cat:'Grains',icon:'🌾',srv:'1 cup (157g)',cal:176,p:6,c:36,f:0.3},
   {id:52,name:'Pita Bread',cat:'Grains',icon:'🫓',srv:'1 piece (60g)',cal:165,p:5.5,c:33,f:1.2},
-  {id:53,name:'Sourdough Bread',cat:'Grains',icon:'🍞',srv:'1 slice (36g)',cal:92,p:3.8,c:18,f:0.7},
-  {id:60,name:'Chicken Breast',cat:'Protein',icon:'🍗',srv:'3 oz grilled (85g)',cal:128,p:26,c:0,f:2.7},
-  {id:61,name:'Chicken Thigh',cat:'Protein',icon:'🍗',srv:'3 oz grilled (85g)',cal:178,p:22,c:0,f:9.5},
-  {id:62,name:'Ground Beef 80/20',cat:'Protein',icon:'🥩',srv:'3 oz cooked (85g)',cal:218,p:22,c:0,f:14},
-  {id:63,name:'Ground Beef 90/10',cat:'Protein',icon:'🥩',srv:'3 oz cooked (85g)',cal:173,p:24,c:0,f:8},
-  {id:64,name:'Sirloin Steak',cat:'Protein',icon:'🥩',srv:'3 oz (85g)',cal:160,p:26,c:0,f:5.4},
-  {id:65,name:'Turkey Breast',cat:'Protein',icon:'🦃',srv:'3 oz (85g)',cal:135,p:26,c:0,f:3},
-  {id:66,name:'Salmon (Atlantic)',cat:'Protein',icon:'🐟',srv:'3 oz (85g)',cal:177,p:17,c:0,f:11},
-  {id:67,name:'Tuna (canned, water)',cat:'Protein',icon:'🐟',srv:'3 oz (85g)',cal:109,p:24,c:0,f:2.5},
-  {id:68,name:'Shrimp',cat:'Protein',icon:'🦐',srv:'3 oz (85g)',cal:84,p:18,c:0,f:0.9},
-  {id:69,name:'Tilapia',cat:'Protein',icon:'🐟',srv:'3 oz (85g)',cal:110,p:22,c:0,f:2.3},
-  {id:70,name:'Pork Loin',cat:'Protein',icon:'🥩',srv:'3 oz (85g)',cal:122,p:22,c:0,f:3.4},
-  {id:71,name:'Bacon',cat:'Protein',icon:'🥓',srv:'2 slices (16g)',cal:87,p:5.9,c:0.1,f:6.9},
-  {id:72,name:'Egg (whole)',cat:'Protein',icon:'🥚',srv:'1 large (50g)',cal:72,p:6.3,c:0.4,f:5},
-  {id:73,name:'Egg Whites',cat:'Protein',icon:'🥚',srv:'1/2 cup (121g)',cal:63,p:13,c:0.9,f:0.2},
-  {id:74,name:'Ham',cat:'Protein',icon:'🥩',srv:'3 oz (85g)',cal:150,p:16,c:3,f:8},
-  {id:75,name:'Lamb Chop',cat:'Protein',icon:'🥩',srv:'3 oz (85g)',cal:200,p:22,c:0,f:12},
-  {id:76,name:'Cod Fish',cat:'Protein',icon:'🐟',srv:'3 oz (85g)',cal:89,p:20,c:0,f:0.7},
-  {id:77,name:'Rotisserie Chicken',cat:'Protein',icon:'🍗',srv:'3 oz (85g)',cal:173,p:22,c:0,f:9},
-  {id:80,name:'Black Beans',cat:'Legumes',icon:'🫘',srv:'1/2 cup cooked (86g)',cal:114,p:7.6,c:20,f:0.5},
-  {id:81,name:'Chickpeas',cat:'Legumes',icon:'🫘',srv:'1/2 cup cooked (82g)',cal:134,p:7.3,c:22,f:2.1},
-  {id:82,name:'Lentils',cat:'Legumes',icon:'🫘',srv:'1/2 cup cooked (99g)',cal:115,p:8.9,c:20,f:0.4},
-  {id:83,name:'Kidney Beans',cat:'Legumes',icon:'🫘',srv:'1/2 cup cooked (89g)',cal:112,p:7.7,c:20,f:0.4},
-  {id:84,name:'Edamame',cat:'Legumes',icon:'🫘',srv:'1/2 cup (78g)',cal:94,p:9.2,c:7.4,f:4},
-  {id:85,name:'Tofu (firm)',cat:'Legumes',icon:'🫘',srv:'3 oz (85g)',cal:70,p:8,c:1.9,f:4},
-  {id:86,name:'Tempeh',cat:'Legumes',icon:'🫘',srv:'3 oz (85g)',cal:160,p:15,c:8,f:9},
-  {id:87,name:'Pinto Beans',cat:'Legumes',icon:'🫘',srv:'1/2 cup cooked (86g)',cal:122,p:7.7,c:22,f:0.5},
-  {id:90,name:'Whole Milk',cat:'Dairy',icon:'🥛',srv:'1 cup (244g)',cal:149,p:8,c:12,f:8},
-  {id:91,name:'Skim Milk',cat:'Dairy',icon:'🥛',srv:'1 cup (244g)',cal:83,p:8.3,c:12,f:0.2},
-  {id:92,name:'Greek Yogurt (0%)',cat:'Dairy',icon:'🍦',srv:'1 cup (245g)',cal:130,p:23,c:9,f:0.7},
-  {id:93,name:'Greek Yogurt (2%)',cat:'Dairy',icon:'🍦',srv:'1 cup (245g)',cal:150,p:20,c:9,f:4},
-  {id:94,name:'Cheddar Cheese',cat:'Dairy',icon:'🧀',srv:'1 oz (28g)',cal:115,p:6.5,c:0.4,f:9.5},
-  {id:95,name:'Mozzarella',cat:'Dairy',icon:'🧀',srv:'1 oz (28g)',cal:85,p:6.3,c:0.6,f:6.3},
-  {id:96,name:'Cottage Cheese (1%)',cat:'Dairy',icon:'🍦',srv:'1/2 cup (113g)',cal:81,p:14,c:3,f:1.2},
-  {id:97,name:'Butter',cat:'Dairy',icon:'🧈',srv:'1 tbsp (14g)',cal:102,p:0.1,c:0,f:11.5},
-  {id:98,name:'Cream Cheese',cat:'Dairy',icon:'🧀',srv:'2 tbsp (29g)',cal:97,p:1.7,c:1.2,f:9.6},
-  {id:99,name:'Parmesan',cat:'Dairy',icon:'🧀',srv:'1 tbsp (5g)',cal:22,p:1.9,c:0.2,f:1.4},
-  {id:100,name:'String Cheese',cat:'Dairy',icon:'🧀',srv:'1 stick (28g)',cal:80,p:6,c:1,f:6},
-  {id:110,name:'Almonds',cat:'Nuts & Seeds',icon:'🌰',srv:'1 oz (28g)',cal:164,p:6,c:6,f:14},
-  {id:111,name:'Walnuts',cat:'Nuts & Seeds',icon:'🌰',srv:'1 oz (28g)',cal:185,p:4.3,c:3.9,f:18.5},
-  {id:112,name:'Cashews',cat:'Nuts & Seeds',icon:'🌰',srv:'1 oz (28g)',cal:157,p:5.2,c:8.6,f:12.4},
-  {id:113,name:'Peanuts',cat:'Nuts & Seeds',icon:'🥜',srv:'1 oz (28g)',cal:161,p:7.3,c:4.6,f:14},
-  {id:114,name:'Peanut Butter',cat:'Nuts & Seeds',icon:'🥜',srv:'2 tbsp (32g)',cal:191,p:7.1,c:7,f:16},
-  {id:115,name:'Almond Butter',cat:'Nuts & Seeds',icon:'🌰',srv:'2 tbsp (32g)',cal:196,p:6.7,c:6,f:18},
-  {id:116,name:'Chia Seeds',cat:'Nuts & Seeds',icon:'🌱',srv:'2 tbsp (20g)',cal:97,p:3.3,c:8.5,f:6.2},
-  {id:117,name:'Flaxseeds',cat:'Nuts & Seeds',icon:'🌱',srv:'2 tbsp (14g)',cal:74,p:2.6,c:4,f:5.9},
-  {id:118,name:'Sunflower Seeds',cat:'Nuts & Seeds',icon:'🌻',srv:'1 oz (28g)',cal:164,p:5.5,c:6.5,f:14},
-  {id:119,name:'Mixed Nuts',cat:'Nuts & Seeds',icon:'🌰',srv:'1 oz (28g)',cal:168,p:5,c:7.2,f:15},
-  {id:120,name:'Olive Oil',cat:'Fats & Oils',icon:'🫙',srv:'1 tbsp (14g)',cal:119,p:0,c:0,f:13.5},
-  {id:121,name:'Coconut Oil',cat:'Fats & Oils',icon:'🫙',srv:'1 tbsp (14g)',cal:121,p:0,c:0,f:13.5},
-  {id:122,name:'Mayonnaise',cat:'Fats & Oils',icon:'🫙',srv:'1 tbsp (14g)',cal:94,p:0.1,c:0.1,f:10.3},
-  {id:123,name:'Avocado Oil',cat:'Fats & Oils',icon:'🫙',srv:'1 tbsp (14g)',cal:124,p:0,c:0,f:14},
-  {id:130,name:'Orange Juice',cat:'Beverages',icon:'🧃',srv:'1 cup (248ml)',cal:112,p:1.7,c:26,f:0.5},
-  {id:131,name:'Coffee (black)',cat:'Beverages',icon:'☕',srv:'1 cup (240ml)',cal:2,p:0.3,c:0,f:0},
-  {id:132,name:'Latte (whole milk)',cat:'Beverages',icon:'☕',srv:'12 oz (360ml)',cal:204,p:12,c:18,f:8},
-  {id:133,name:'Sports Drink',cat:'Beverages',icon:'🧃',srv:'12 oz (355ml)',cal:80,p:0,c:21,f:0},
-  {id:134,name:'Protein Shake (whey)',cat:'Beverages',icon:'🥤',srv:'1 scoop (33g)',cal:120,p:24,c:4,f:2},
-  {id:135,name:'Almond Milk (unsweetened)',cat:'Beverages',icon:'🥛',srv:'1 cup (240ml)',cal:30,p:1,c:1,f:2.5},
-  {id:136,name:'Oat Milk',cat:'Beverages',icon:'🥛',srv:'1 cup (240ml)',cal:120,p:3,c:16,f:5},
-  {id:137,name:'Green Tea',cat:'Beverages',icon:'🍵',srv:'1 cup (240ml)',cal:2,p:0,c:0,f:0},
-  {id:138,name:'Apple Juice',cat:'Beverages',icon:'🧃',srv:'1 cup (248ml)',cal:117,p:0.1,c:29,f:0.3},
-  {id:139,name:'Whole Milk Latte',cat:'Beverages',icon:'☕',srv:'16 oz (480ml)',cal:250,p:14,c:23,f:10},
-  {id:140,name:'Potato Chips',cat:'Snacks',icon:'🥔',srv:'1 oz (28g)',cal:152,p:2,c:15,f:9.8},
-  {id:141,name:'Pretzels',cat:'Snacks',icon:'🥨',srv:'1 oz (28g)',cal:108,p:2.6,c:22,f:0.8},
-  {id:142,name:'Popcorn (air-popped)',cat:'Snacks',icon:'🍿',srv:'3 cups (24g)',cal:93,p:3,c:19,f:1.1},
-  {id:143,name:'Dark Chocolate 70%',cat:'Snacks',icon:'🍫',srv:'1 oz (28g)',cal:170,p:2,c:13,f:12},
-  {id:144,name:'Rice Cakes',cat:'Snacks',icon:'🍘',srv:'2 cakes (18g)',cal:70,p:1.4,c:15,f:0.6},
-  {id:145,name:'Crackers (wheat)',cat:'Snacks',icon:'🍘',srv:'5 crackers (14g)',cal:65,p:1.4,c:11,f:1.8},
-  {id:146,name:'Hummus',cat:'Snacks',icon:'🫙',srv:'2 tbsp (30g)',cal:70,p:2,c:6,f:4.5},
-  {id:147,name:'Protein Bar',cat:'Snacks',icon:'🍫',srv:'1 bar (60g)',cal:200,p:20,c:25,f:5},
-  {id:148,name:'Granola Bar',cat:'Snacks',icon:'🥜',srv:'1 bar (35g)',cal:147,p:2.5,c:24,f:5},
-  {id:149,name:'Trail Mix',cat:'Snacks',icon:'🌰',srv:'1/4 cup (40g)',cal:173,p:4.5,c:17,f:10},
-  {id:160,name:'Big Mac',cat:'Fast Food',icon:'🍔',srv:'1 burger (212g)',cal:550,p:25,c:46,f:30},
-  {id:161,name:"McDonald's Fries (med)",cat:'Fast Food',icon:'🍟',srv:'1 serving (117g)',cal:320,p:4.4,c:44,f:15},
-  {id:162,name:'Chicken McNuggets (10)',cat:'Fast Food',icon:'🍗',srv:'10 pieces (165g)',cal:440,p:25,c:27,f:26},
-  {id:163,name:'Subway 6" Turkey',cat:'Fast Food',icon:'🥪',srv:'1 sub (220g)',cal:280,p:18,c:46,f:4.5},
-  {id:164,name:'Chipotle Chicken Bowl',cat:'Fast Food',icon:'🌯',srv:'1 bowl (430g)',cal:655,p:51,c:65,f:18},
-  {id:165,name:'Pizza Slice (cheese)',cat:'Fast Food',icon:'🍕',srv:'1 slice (107g)',cal:272,p:12,c:33,f:10},
-  {id:166,name:'Cheeseburger',cat:'Fast Food',icon:'🍔',srv:'1 burger (113g)',cal:300,p:15,c:33,f:12},
-  {id:167,name:'Caesar Salad + Dressing',cat:'Fast Food',icon:'🥗',srv:'1 salad (300g)',cal:360,p:9,c:20,f:28},
-  {id:168,name:'Sushi Salmon Roll (8pc)',cat:'Fast Food',icon:'🍱',srv:'8 pieces (200g)',cal:304,p:13,c:46,f:7},
-  {id:169,name:'Bean & Cheese Burrito',cat:'Fast Food',icon:'🌯',srv:'1 burrito (174g)',cal:380,p:13,c:58,f:11},
-  {id:170,name:'Ketchup',cat:'Condiments',icon:'🍅',srv:'1 tbsp (17g)',cal:17,p:0.2,c:4.1,f:0},
-  {id:171,name:'Mustard',cat:'Condiments',icon:'🌭',srv:'1 tsp (5g)',cal:3,p:0.2,c:0.3,f:0.2},
-  {id:172,name:'BBQ Sauce',cat:'Condiments',icon:'🫙',srv:'2 tbsp (36g)',cal:52,p:0,c:13,f:0.1},
-  {id:173,name:'Ranch Dressing',cat:'Condiments',icon:'🫙',srv:'2 tbsp (30g)',cal:140,p:0.5,c:1.5,f:14},
-  {id:174,name:'Salsa',cat:'Condiments',icon:'🍅',srv:'2 tbsp (32g)',cal:10,p:0.5,c:2,f:0},
-  {id:175,name:'Hot Sauce',cat:'Condiments',icon:'🌶️',srv:'1 tsp (5g)',cal:1,p:0,c:0.1,f:0},
-  {id:176,name:'Soy Sauce',cat:'Condiments',icon:'🫙',srv:'1 tbsp (16g)',cal:9,p:1.3,c:0.8,f:0.1},
-  {id:177,name:'Honey',cat:'Condiments',icon:'🍯',srv:'1 tbsp (21g)',cal:64,p:0.1,c:17,f:0},
-  {id:178,name:'Maple Syrup',cat:'Condiments',icon:'🍯',srv:'1 tbsp (20g)',cal:52,p:0,c:13.4,f:0},
-  {id:179,name:'Guacamole',cat:'Condiments',icon:'🥑',srv:'2 tbsp (30g)',cal:45,p:0.6,c:3,f:4},
-  {id:180,name:'Pancakes (plain)',cat:'Breakfast',icon:'🥞',srv:'3 medium (120g)',cal:277,p:7.3,c:41,f:9},
-  {id:181,name:'Waffle',cat:'Breakfast',icon:'🧇',srv:'1 waffle (75g)',cal:218,p:5.9,c:25,f:10.6},
-  {id:182,name:'Corn Flakes Cereal',cat:'Breakfast',icon:'🥣',srv:'1 cup (28g)',cal:100,p:2,c:24,f:0.1},
-  {id:183,name:'French Toast',cat:'Breakfast',icon:'🍞',srv:'2 slices (135g)',cal:325,p:12,c:36,f:14},
-  {id:184,name:'Croissant',cat:'Breakfast',icon:'🥐',srv:'1 medium (57g)',cal:231,p:5,c:26,f:12},
-  {id:185,name:'English Muffin',cat:'Breakfast',icon:'🥯',srv:'1 muffin (57g)',cal:134,p:4.4,c:26,f:1},
-  {id:186,name:'Scrambled Eggs (2)',cat:'Breakfast',icon:'🍳',srv:'2 eggs cooked (110g)',cal:182,p:12,c:1.6,f:14},
-  {id:187,name:'Breakfast Sausage (2)',cat:'Breakfast',icon:'🌭',srv:'2 links (45g)',cal:170,p:7,c:1,f:15},
-  {id:188,name:'Instant Oatmeal',cat:'Breakfast',icon:'🥣',srv:'1 packet (28g)',cal:100,p:4,c:19,f:2},
-  {id:190,name:'Vanilla Ice Cream',cat:'Desserts',icon:'🍦',srv:'1/2 cup (66g)',cal:145,p:2.5,c:17,f:7.9},
-  {id:191,name:'Chocolate Chip Cookie',cat:'Desserts',icon:'🍪',srv:'1 medium (16g)',cal:78,p:1,c:10,f:3.7},
-  {id:192,name:'Brownie',cat:'Desserts',icon:'🍫',srv:'1 piece (57g)',cal:232,p:3,c:36,f:10},
-  {id:193,name:'Cheesecake',cat:'Desserts',icon:'🎂',srv:'1 slice (92g)',cal:321,p:5.5,c:26,f:23},
-  {id:194,name:'Apple Pie',cat:'Desserts',icon:'🥧',srv:'1 slice (117g)',cal:296,p:2.7,c:43,f:14},
-  {id:195,name:'Glazed Donut',cat:'Desserts',icon:'🍩',srv:'1 medium (53g)',cal:253,p:2.4,c:37,f:11},
-  {id:196,name:'Blueberry Muffin',cat:'Desserts',icon:'🧁',srv:'1 medium (113g)',cal:426,p:5.5,c:64,f:17},
-  {id:197,name:'Chocolate Cake',cat:'Desserts',icon:'🎂',srv:'1 slice (64g)',cal:236,p:3.3,c:35,f:10},
-  // Deli & Lunch Meats
-  {id:200,name:'Turkey Breast (Oven Roasted)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:60,p:13,c:1,f:0.5},
-  {id:201,name:'Turkey (Honey Roasted)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:70,p:11,c:3,f:0.5},
-  {id:202,name:'Turkey (Smoked)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:60,p:12,c:1,f:0.5},
-  {id:203,name:'Turkey (Peppered)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:60,p:12,c:1,f:0.5},
-  {id:204,name:'Ham (Black Forest)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:60,p:10,c:2,f:1.5},
-  {id:205,name:'Ham (Honey)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:70,p:10,c:4,f:1.5},
-  {id:206,name:'Ham (Smoked)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:65,p:10,c:1,f:2},
-  {id:207,name:'Ham (Virginia)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:70,p:11,c:2,f:2},
-  {id:208,name:'Roast Beef (Deli)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:70,p:12,c:0,f:2.5},
-  {id:209,name:'Chicken Breast (Deli)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:50,p:11,c:1,f:0.5},
-  {id:210,name:'Salami (Genoa)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 5-6 slices (56g)',cal:220,p:12,c:1,f:19},
-  {id:211,name:'Salami (Hard)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 5-6 slices (56g)',cal:200,p:12,c:1,f:17},
-  {id:212,name:'Salami (Turkey)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 4 slices (56g)',cal:100,p:10,c:1,f:6},
-  {id:213,name:'Pepperoni',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 14 slices (56g)',cal:280,p:12,c:1,f:26},
-  {id:214,name:'Bologna (Beef)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:160,p:7,c:2,f:14},
-  {id:215,name:'Bologna (Turkey)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:100,p:8,c:3,f:6},
-  {id:216,name:'Bologna (Chicken)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:110,p:8,c:3,f:7},
-  {id:217,name:'Pastrami',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:70,p:12,c:0.5,f:2},
-  {id:218,name:'Corned Beef (Deli)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:70,p:11,c:0,f:2.5},
-  {id:219,name:'Pastrami (Turkey)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:60,p:12,c:0.5,f:1},
-  {id:220,name:'Prosciutto',cat:'Deli Meats',icon:'🥪',srv:'1 oz / 2-3 slices (28g)',cal:70,p:7,c:0,f:4.5},
-  {id:221,name:'Mortadella',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:170,p:8,c:2,f:14},
-  {id:222,name:'Capicola (Capocollo)',cat:'Deli Meats',icon:'🥪',srv:'1 oz / 3-4 slices (28g)',cal:80,p:7,c:0,f:5},
-  {id:223,name:'Soppressata',cat:'Deli Meats',icon:'🥪',srv:'1 oz / 4-5 slices (28g)',cal:110,p:7,c:0.5,f:9},
-  {id:224,name:'Braunschweiger / Liverwurst',cat:'Deli Meats',icon:'🥪',srv:'2 oz (56g)',cal:170,p:8,c:2,f:15},
-  {id:225,name:'Head Cheese',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:100,p:9,c:0,f:7},
-  {id:226,name:'Olive Loaf',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:130,p:6,c:5,f:10},
-  {id:227,name:'Summer Sausage',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 4 slices (56g)',cal:170,p:8,c:1,f:15},
-  {id:228,name:'Peppered Salami',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 5 slices (56g)',cal:210,p:12,c:1,f:18},
-  {id:229,name:'Roast Chicken (Deli)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2-3 slices (56g)',cal:55,p:11,c:1,f:1},
-  {id:230,name:'Pork Roll (Taylor Ham)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:130,p:7,c:2,f:11},
-  {id:231,name:'Dry Salami',cat:'Deli Meats',icon:'🥪',srv:'1 oz / 4-5 slices (28g)',cal:120,p:7,c:0.5,f:10},
-  {id:232,name:'Kielbasa (sliced)',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 2 slices (56g)',cal:170,p:8,c:2,f:15},
-  {id:233,name:'Chorizo (dry cured)',cat:'Deli Meats',icon:'🥪',srv:'1 oz / 4-5 slices (28g)',cal:130,p:7,c:1,f:11},
-  {id:234,name:'Andouille Sausage (sliced)',cat:'Deli Meats',icon:'🥪',srv:'2 oz (56g)',cal:160,p:8,c:1,f:14},
-  {id:235,name:'Chicken Salami',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 4 slices (56g)',cal:100,p:10,c:1,f:6},
-  {id:236,name:'Veggie Deli Slices',cat:'Deli Meats',icon:'🥪',srv:'2 oz / 3 slices (56g)',cal:80,p:9,c:4,f:2},
+  {id:60,name:'Chicken Breast',cat:'Protein',icon:'🍗',srv:'100g',cal:165,p:31,c:0,f:3.6},
+  {id:61,name:'Ground Beef',cat:'Protein',icon:'🥩',srv:'100g',cal:250,p:26,c:0,f:15},
+  {id:62,name:'Salmon',cat:'Protein',icon:'🐟',srv:'100g',cal:208,p:20,c:0,f:13},
+  {id:63,name:'Eggs',cat:'Protein',icon:'🥚',srv:'1 large',cal:78,p:6,c:0.6,f:5},
+  {id:64,name:'Greek Yogurt',cat:'Dairy',icon:'🥛',srv:'1 cup (227g)',cal:149,p:20,c:9,f:5},
+  {id:65,name:'Cottage Cheese',cat:'Dairy',icon:'🥣',srv:'1 cup (225g)',cal:206,p:28,c:8,f:9},
+  {id:66,name:'Milk',cat:'Dairy',icon:'🥛',srv:'1 cup (240ml)',cal:149,p:8,c:12,f:8},
+  {id:67,name:'Cheese (Cheddar)',cat:'Dairy',icon:'🧀',srv:'1 oz (28g)',cal:113,p:7,c:1,f:9},
+  {id:68,name:'Almonds',cat:'Nuts',icon:'🫒',srv:'1 oz (28g)',cal:161,p:6,c:6,f:14},
+  {id:69,name:'Peanut Butter',cat:'Nuts',icon:'🫓',srv:'2 tbsp (32g)',cal:188,p:8,c:7,f:16},
+  {id:70,name:'Lentils (cooked)',cat:'Legumes',icon:'🍲',srv:'1 cup (198g)',cal:230,p:18,c:40,f:0.8},
+  {id:71,name:'Black Beans',cat:'Legumes',icon:'🫘',srv:'1 cup (172g)',cal:227,p:15,c:41,f:0.9},
+  {id:72,name:'Chickpeas',cat:'Legumes',icon:'🫘',srv:'1 cup (269g)',cal:269,p:15,c:45,f:4},
+  {id:73,name:'Tofu',cat:'Protein',icon:'🥡',srv:'1/2 block (100g)',cal:76,p:8,c:2,f:5},
+  {id:74,name:'Salmon (canned)',cat:'Protein',icon:'🐟',srv:'3 oz (85g)',cal:99,p:17,c:0,f:3.5},
+  {id:75,name:'Tuna (canned)',cat:'Protein',icon:'🐟',srv:'3 oz (85g)',cal:99,p:22,c:0,f:0.7},
+  {id:76,name:'Turkey',cat:'Protein',icon:'🍗',srv:'100g',cal:135,p:30,c:0,f:1},
+  {id:77,name:'Pork Loin',cat:'Protein',icon:'🍖',srv:'100g',cal:242,p:27,c:0,f:14},
+  {id:78,name:'Beef Steak',cat:'Protein',icon:'🥩',srv:'100g',cal:271,p:26,c:0,f:17},
+  {id:79,name:'Shrimp',cat:'Protein',icon:'🦐',srv:'100g',cal:99,p:24,c:0,f:0.3},
 ];
 
-const CATEGORIES = ['All','Deli Meats','Fruits','Vegetables','Grains','Protein','Legumes','Dairy','Nuts & Seeds','Fats & Oils','Beverages','Snacks','Fast Food','Condiments','Breakfast','Desserts'];
+const CATEGORIES = ['All','Fruits','Vegetables','Grains','Protein','Dairy','Nuts','Legumes'];
 const MEALS = ['Breakfast','Lunch','Dinner','Snacks'];
-const MEAL_ICONS = {Breakfast:'☀️',Lunch:'🌤️',Dinner:'🌙',Snacks:'🍎'};
-const DEFAULT_GOALS = {calories:2000,protein:150,carbs:250,fat:65};
-const CAT_BG = {
-  Fruits:'#fff7ed',Vegetables:'#f0fdf4',Grains:'#fefce8',Protein:'#fef2f2',
-  Legumes:'#f5f3ff',Dairy:'#eff6ff','Nuts & Seeds':'#fef3c7',
-  'Fats & Oils':'#fefce8',Beverages:'#ecfeff',Snacks:'#fdf4ff',
-  'Fast Food':'#fff7ed',Condiments:'#f7fee7',Breakfast:'#fffbeb',Desserts:'#fdf4ff','Deli Meats':'#fef9ee'
-};
+const MEAL_ICONS = {Breakfast:'🌅',Lunch:'🥗',Dinner:'🍽️',Snacks:'🍿'};
+const DEFAULT_GOALS = {calories:2000,protein:150,carbs:220,fat:65};
+const PROFILE_EMOJIS = ['😊','🙂','😎','🥰','😘','🤗','😤','💪','🔥','👑','🎯','⭐'];
+const CAT_BG = {Fruits:'#fed7aa',Vegetables:'#bfdbfe',Grains:'#fef08a',Protein:'#fecaca',Dairy:'#f3e8ff',Nuts:'#dbeafe',Legumes:'#dcfce7'};
 
-function uid() { return Math.random().toString(36).slice(2,10); }
-function todayStr() { return new Date().toISOString().split('T')[0]; }
+function uid() { return Math.random().toString(36).slice(2,11); }
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
 function fmtDate(d) {
-  const [y,m,day] = d.split('-').map(Number);
-  const dt = new Date(y,m-1,day);
-  const now = new Date(); now.setHours(0,0,0,0);
-  const diff = Math.round((dt - now) / 86400000);
-  if(diff===0) return 'Today';
-  if(diff===-1) return 'Yesterday';
-  if(diff===1) return 'Tomorrow';
-  return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const [y,m,day] = d.split('-');
+  const date = new Date(y,m-1,day);
+  const opts = {weekday:'short',month:'short',day:'numeric'};
+  return date.toLocaleDateString('en-US',opts);
 }
 function addDays(d, n) {
-  const [y,m,day] = d.split('-').map(Number);
+  const [y,m,day] = d.split('-');
   const dt = new Date(y,m-1,day+n);
   return dt.toISOString().split('T')[0];
 }
 function r1(n) { return Math.round(n*10)/10; }
 
-function CircularProgress({value, max, size=150, stroke=13, color='#10b981', children}) {
+function CircularProgress({value, max, size=150, stroke=12, color='#F97316', children}) {
   const r2 = (size-stroke)/2;
   const circ = 2*Math.PI*r2;
   const pct = Math.min(Math.max(value/max,0),1);
@@ -385,115 +320,93 @@ function CircularProgress({value, max, size=150, stroke=13, color='#10b981', chi
   return (
     <div className="ring-container" style={{width:size,height:size,position:'relative'}}>
       <svg width={size} height={size} style={{transform:'rotate(-90deg)',display:'block'}}>
-        <circle cx={size/2} cy={size/2} r={r2} fill="none" stroke="#e5e7eb" strokeWidth={stroke}/>
+        <circle cx={size/2} cy={size/2} r={r2} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke}/>
         <circle cx={size/2} cy={size/2} r={r2} fill="none" stroke={color}
           strokeWidth={stroke} strokeLinecap="round"
-          strokeDasharray={`${dash} ${circ}`} style={{transition:'stroke-dasharray 0.5s ease'}}/>
+          strokeDasharray={`${dash} ${circ}`} style={{transition:'stroke-dasharray 0.5s ease',filter:`drop-shadow(0 0 8px ${color}80)`}}/>
       </svg>
       <div className="ring-center">{children}</div>
     </div>
   );
 }
 
-const PROFILE_EMOJIS = ['😀','😎','🤩','🥳','💪','🏃','🧘','🥗','🍎','🥦','🔥','⚡','🌟','🦁','🐼','🦊','🐸','🦋','🌈','🎯'];
+function Icon({name, size=22, color='currentColor', strokeWidth=2}) {
+  const icons = {
+    chart: <><rect x="3" y="13" width="4" height="8"/><rect x="9" y="9" width="4" height="12"/><rect x="15" y="5" width="4" height="16"/></>,
+    search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></>,
+    book: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+    sliders: <><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="8" cy="18" r="2" fill="currentColor" stroke="none"/></>,
+    plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+    trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
+    x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+    chevLeft: <polyline points="15 18 9 12 15 6"/>,
+    chevRight: <polyline points="9 18 15 12 9 6"/>,
+    user: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+    flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>,
+    drop: <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>,
+    check: <polyline points="20 6 9 17 4 12"/>,
+    logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+    edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+      {icons[name]}
+    </svg>
+  );
+}
 
-// ── Profile / Login Screen (Supabase-backed) ──────────────────────────────────
 function ProfileScreen({onSelect}) {
-  const [profiles, setProfiles]   = React.useState([]);
-  const [loading, setLoading]     = React.useState(true);
-  const [view, setView]           = React.useState('list'); // 'list' | 'login' | 'create'
-  const [selected, setSelected]   = React.useState(null);
-  const [pin, setPin]             = React.useState('');
-  const [newName, setNewName]     = React.useState('');
-  const [newEmoji, setNewEmoji]   = React.useState('😀');
-  const [newPin, setNewPin]       = React.useState('');
-  const [newPin2, setNewPin2]     = React.useState('');
-  const [err, setErr]             = React.useState('');
-  const [busy, setBusy]           = React.useState(false);
+  const [profiles, setProfiles] = useState([]);
+  const [view, setView] = useState('list');
+  const [newName, setNewName] = useState('');
+  const [newEmoji, setNewEmoji] = useState(PROFILE_EMOJIS[0]);
+  const [newPin, setNewPin] = useState('');
+  const [newPin2, setNewPin2] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  React.useEffect(()=>{ loadProfiles(); },[]);
-
-  async function loadProfiles() {
-    setLoading(true);
-    const { data } = await sb.from('ct_profiles').select('id,name,emoji').order('created_at');
-    setProfiles(data||[]);
-    setLoading(false);
-  }
-
-  function startLogin(p) { setSelected(p); setPin(''); setErr(''); setView('login'); }
-
-  async function doLogin() {
-    if(!pin) return setErr('Enter your PIN');
-    setBusy(true); setErr('');
-    const h = await hashPin(pin);
-    const { data } = await sb.from('ct_profiles').select('id,name,emoji').eq('id', selected.id).eq('pin_hash', h).single();
-    setBusy(false);
-    if(!data) return setErr('Wrong PIN — try again');
-    localStorage.setItem('ct_active', JSON.stringify(data));
-    onSelect(data);
-  }
+  useEffect(()=>{
+    async function load(){
+      const res = await sb.from('ct_profiles').select('*');
+      setProfiles(res.data||[]);
+    }
+    load();
+  },[]);
 
   async function doCreate() {
-    const name = newName.trim();
-    if(!name) return setErr('Enter a name');
-    if(newPin.length < 4) return setErr('PIN must be at least 4 digits');
-    if(newPin !== newPin2) return setErr('PINs do not match');
-    setBusy(true); setErr('');
-    const pin_hash = await hashPin(newPin);
-    const { data, error } = await sb.from('ct_profiles').insert({name, emoji:newEmoji, pin_hash}).select('id,name,emoji').single();
-    setBusy(false);
-    if(error) return setErr('Error creating profile — try again');
-    localStorage.setItem('ct_active', JSON.stringify(data));
-    onSelect(data);
+    if(!newName.trim()){setErr('Name required');return;}
+    if(newPin.length<4){setErr('PIN must be 4+ digits');return;}
+    if(newPin!==newPin2){setErr('PINs do not match');return;}
+    setBusy(true);
+    const hashedPin = await hashPin(newPin);
+    const res = await sb.from('ct_profiles').insert({
+      id:uid(),emoji:newEmoji,name:newName.trim(),pin_hash:hashedPin
+    }).select();
+    if(res.data?.length){
+      const p = res.data[0];
+      localStorage.setItem('ct_active',JSON.stringify({id:p.id,name:p.name,emoji:p.emoji}));
+      onSelect({id:p.id,name:p.name,emoji:p.emoji});
+    }else{
+      setErr('Failed to create');
+      setBusy(false);
+    }
   }
 
-  if(loading) return (
-    <div className="profile-screen" style={{justifyContent:'center',gap:16}}>
-      <div className="profile-logo">🥗</div>
-      <div style={{color:'white',fontSize:18,fontWeight:600}}>Loading…</div>
-    </div>
-  );
+  function startLogin(p) {
+    setErr('');
+    const pinInput = prompt(`Enter PIN for ${p.name}:`);
+    if(!pinInput) return;
+    hashPin(pinInput).then(async hash=>{
+      if(hash===p.pin_hash) {
+        localStorage.setItem('ct_active',JSON.stringify({id:p.id,name:p.name,emoji:p.emoji}));
+        onSelect({id:p.id,name:p.name,emoji:p.emoji});
+      } else {
+        alert('Wrong PIN');
+      }
+    });
+  }
 
-  // ── PIN entry screen ──
-  if(view === 'login') return (
-    <div className="profile-screen">
-      <div className="profile-logo">🥗</div>
-      <div className="profile-app-name">CalTrack</div>
-      <div className="profile-tagline">Your personal calorie & macro tracker</div>
-      <div className="profile-card">
-        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
-          <span style={{fontSize:40}}>{selected.emoji}</span>
-          <div>
-            <div style={{fontSize:20,fontWeight:800}}>{selected.name}</div>
-            <div style={{fontSize:13,color:'var(--subtext)'}}>Enter your PIN to continue</div>
-          </div>
-        </div>
-        <div style={{display:'flex',gap:12,marginBottom:16}}>
-          {[0,1,2,3].map(i=>(
-            <div key={i} style={{flex:1,height:12,borderRadius:6,background: pin.length>i ? 'var(--green)' : 'var(--border)',transition:'background 0.15s'}}/>
-          ))}
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
-          {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((k,i)=>(
-            <button key={i} onClick={()=>{
-              if(k==='⌫') setPin(p=>p.slice(0,-1));
-              else if(k!=='' && pin.length<8) setPin(p=>p+k);
-            }} style={{padding:'16px 0',fontSize:22,fontWeight:600,borderRadius:14,border:k===''?'none':'2px solid var(--border)',background:k===''?'transparent':'white',cursor:k===''?'default':'pointer',color:k==='⌫'?'var(--red)':'var(--text)'}}>
-              {k}
-            </button>
-          ))}
-        </div>
-        {err && <div style={{color:'var(--red)',fontSize:13,textAlign:'center',marginBottom:10}}>{err}</div>}
-        <button className="btn btn-primary btn-block" onClick={doLogin} disabled={busy||pin.length<4}>
-          {busy ? 'Checking…' : 'Unlock →'}
-        </button>
-        <button className="btn btn-secondary btn-block" style={{marginTop:10}} onClick={()=>{setView('list');setErr('');}}>← Back</button>
-      </div>
-    </div>
-  );
-
-  // ── Create profile screen ──
-  if(view === 'create') return (
+  if(view==='create') return (
     <div className="profile-screen">
       <div className="profile-logo">🥗</div>
       <div className="profile-app-name">CalTrack</div>
@@ -509,18 +422,18 @@ function ProfileScreen({onSelect}) {
         <div style={{marginBottom:10}}>
           <div className="form-label">YOUR NAME</div>
           <input type="text" placeholder="e.g. Jeff" value={newName} onChange={e=>{setNewName(e.target.value);setErr('');}}
-            style={{background:'var(--bg)',border:'1.5px solid transparent',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
+            style={{background:'var(--surface-2)',border:'1.5px solid var(--border)',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
           <div>
             <div className="form-label">PIN (4+ digits)</div>
             <input type="password" inputMode="numeric" placeholder="••••" value={newPin} onChange={e=>{setNewPin(e.target.value.replace(/\D/g,''));setErr('');}}
-              style={{background:'var(--bg)',border:'1.5px solid transparent',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
+              style={{background:'var(--surface-2)',border:'1.5px solid var(--border)',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
           </div>
           <div>
             <div className="form-label">CONFIRM PIN</div>
             <input type="password" inputMode="numeric" placeholder="••••" value={newPin2} onChange={e=>{setNewPin2(e.target.value.replace(/\D/g,''));setErr('');}}
-              style={{background:'var(--bg)',border:'1.5px solid transparent',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
+              style={{background:'var(--surface-2)',border:'1.5px solid var(--border)',borderRadius:10,padding:'12px 14px',fontSize:16,width:'100%',outline:'none',color:'var(--text)'}}/>
           </div>
         </div>
         {err && <div style={{color:'var(--red)',fontSize:13,marginBottom:10}}>{err}</div>}
@@ -690,9 +603,11 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   function closeAll(){ setAddModal(null); setRecipeModal(null); setLogRecipeModal(null); }
 
   if(syncing) return (
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,background:'var(--bg)'}}>
-      <span style={{fontSize:48}}>🥗</span>
-      <div style={{fontSize:15,fontWeight:600,color:'var(--subtext)'}}>Loading your data…</div>
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:14,background:'var(--bg)'}}>
+      <div style={{width:64,height:64,borderRadius:20,background:'var(--orange-dim)',border:'1px solid rgba(249,115,22,0.3)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <Icon name="flame" size={28} color="var(--orange)"/>
+      </div>
+      <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:700,color:'var(--subtext)',letterSpacing:'0.5px'}}>LOADING…</div>
     </div>
   );
 
@@ -701,16 +616,16 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
       {toast && <div key={toast+Date.now()} className="toast">{toast}</div>}
       <div className="header">
         <div className="header-inner">
-          <button onClick={onSwitchProfile} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:6,padding:0}}>
-            <span style={{fontSize:26,lineHeight:1}}>{profileEmoji}</span>
-            <span style={{fontSize:13,fontWeight:600,color:'var(--subtext)',maxWidth:60,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{profileName}</span>
+          <button onClick={onSwitchProfile} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:8,padding:0,minHeight:44}}>
+            <span style={{fontSize:24,lineHeight:1}}>{profileEmoji}</span>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:'var(--subtext)',maxWidth:64,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{profileName}</span>
           </button>
           <div className="date-nav">
-            <button className="date-btn" onClick={()=>setDate(d=>addDays(d,-1))}>&#8249;</button>
+            <button className="date-btn" onClick={()=>setDate(d=>addDays(d,-1))} aria-label="Previous day"><Icon name="chevLeft" size={18}/></button>
             <span className="date-label" onClick={()=>setDate(todayStr())}>{fmtDate(date)}</span>
-            <button className="date-btn" onClick={()=>setDate(d=>addDays(d,1))}>&#8250;</button>
+            <button className="date-btn" onClick={()=>setDate(d=>addDays(d,1))} aria-label="Next day"><Icon name="chevRight" size={18}/></button>
           </div>
-          <span style={{fontSize:19,fontWeight:800,color:'var(--green)'}}>CalTrack</span>
+          <span className="header-brand">CalTrack</span>
         </div>
       </div>
       <div className="scroll-area">
@@ -720,9 +635,16 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
         {tab==='settings' && <SettingsTab goals={goals} setGoals={saveGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji}/>}
       </div>
       <nav className="bottom-nav">
-        {[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'search',icon:'🔍',label:'Log Food'},{id:'recipes',icon:'📖',label:'Recipes'},{id:'settings',icon:'⚙️',label:'Goals'}].map(n=>(
-          <button key={n.id} className={`nav-item${tab===n.id?' active':''}`} onClick={()=>setTab(n.id)}>
-            <span className="nav-icon">{n.icon}</span><span>{n.label}</span>
+        {[
+          {id:'dashboard',icon:'chart',label:'Dashboard'},
+          {id:'search',icon:'search',label:'Log Food'},
+          {id:'recipes',icon:'book',label:'Recipes'},
+          {id:'settings',icon:'sliders',label:'Goals'}
+        ].map(n=>(
+          <button key={n.id} className={`nav-item${tab===n.id?' active':''}`} onClick={()=>setTab(n.id)} aria-label={n.label}>
+            <Icon name={n.icon} size={22}/>
+            <span className="nav-label">{n.label}</span>
+            <div className="nav-pip"/>
           </button>
         ))}
       </nav>
@@ -738,22 +660,21 @@ function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddF
   const overGoal = remaining < 0;
   return (
     <div>
+      {/* Calorie ring card */}
       <div className="card" style={{marginTop:12}}>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <CircularProgress value={totals.cal} max={goals.calories} color={overGoal?'#ef4444':'#10b981'}>
-            <div className="ring-cal" style={{color:overGoal?'#ef4444':'#111827'}}>
-              {overGoal?'+':''}{Math.abs(Math.round(remaining))}
-            </div>
+          <CircularProgress value={totals.cal} max={goals.calories} color={overGoal?'#EF4444':'#F97316'}>
+            <div className="ring-cal" style={{color:overGoal?'#EF4444':'var(--text)'}}>{overGoal?'+':''}{Math.abs(Math.round(remaining))}</div>
             <div className="ring-label">{overGoal?'over goal':'remaining'}</div>
           </CircularProgress>
           <div style={{flex:1}}>
-            <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
               <span style={{fontSize:13,color:'var(--subtext)'}}>Goal</span>
-              <span style={{fontSize:14,fontWeight:700}}>{goals.calories} cal</span>
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800}}>{goals.calories} <span style={{color:'var(--subtext)',fontWeight:400,fontSize:12}}>cal</span></span>
             </div>
-            <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:12}}>
               <span style={{fontSize:13,color:'var(--subtext)'}}>Eaten</span>
-              <span style={{fontSize:14,fontWeight:700,color:'var(--green)'}}>{Math.round(totals.cal)} cal</span>
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:15,fontWeight:800,color:'var(--orange)'}}>{Math.round(totals.cal)} <span style={{color:'var(--subtext)',fontWeight:400,fontSize:12}}>cal</span></span>
             </div>
             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
               <span className="macro-pill pill-p">P {r1(totals.p)}g</span>
@@ -763,51 +684,73 @@ function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddF
           </div>
         </div>
       </div>
+
+      {/* Macros card */}
       <div className="card">
-        <div style={{fontWeight:700,fontSize:15,marginBottom:12}}>Macros</div>
-        {[{label:'Protein',val:totals.p,goal:goals.protein,color:'#3b82f6'},{label:'Carbs',val:totals.c,goal:goals.carbs,color:'#f59e0b'},{label:'Fat',val:totals.f,goal:goals.fat,color:'#ef4444'}].map(({label,val,goal,color})=>(
-          <div key={label} style={{marginBottom:11}}>
-            <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
-              <span style={{fontSize:13,fontWeight:600,color}}>{label}</span>
-              <span style={{fontSize:12,color:'var(--subtext)'}}>{r1(val)}g / {goal}g</span>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,marginBottom:14,letterSpacing:'0.3px'}}>MACROS</div>
+        {[
+          {label:'Protein',val:totals.p,goal:goals.protein,color:'#3B82F6'},
+          {label:'Carbs',val:totals.c,goal:goals.carbs,color:'#F59E0B'},
+          {label:'Fat',val:totals.f,goal:goals.fat,color:'#EF4444'}
+        ].map(({label,val,goal,color})=>(
+          <div key={label} style={{marginBottom:12}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:13,fontWeight:700,color,letterSpacing:'0.3px'}}>{label.toUpperCase()}</span>
+              <span style={{fontSize:12,color:'var(--subtext)'}}>{r1(val)}g <span style={{color:'var(--muted)'}}>/ {goal}g</span></span>
             </div>
-            <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(val/goal*100,100)}%`,background:color}}/></div>
+            <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(val/goal*100,100)}%`,background:color,boxShadow:`0 0 8px ${color}60`}}/></div>
           </div>
         ))}
       </div>
+
+      {/* Water card */}
       <div className="card">
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-          <span style={{fontWeight:700,fontSize:15}}>💧 Water</span>
-          <span style={{fontSize:13,color:'var(--subtext)'}}>{waterToday}/8 glasses</span>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <Icon name="drop" size={18} color="#3B82F6"/>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,letterSpacing:'0.3px'}}>WATER</span>
+          </div>
+          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:'#60A5FA'}}>{waterToday}<span style={{color:'var(--muted)',fontWeight:400}}>/8 glasses</span></span>
         </div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
           {Array.from({length:8},(_,i)=>(
-            <div key={i} className={`water-btn${i<waterToday?' filled':''}`}
-              onClick={()=>onWater(i<waterToday?i:i+1)}>💧</div>
+            <button key={i} className={`water-btn${i<waterToday?' filled':''}`} onClick={()=>onWater(i<waterToday?i:i+1)} aria-label={`${i+1} glasses`}>
+              <Icon name="drop" size={16}/>
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Meal sections */}
       {MEALS.map(meal=>{
         const me = entries.filter(e=>e.meal===meal);
         const mc = me.reduce((s,e)=>s+e.cal,0);
         return (
           <div key={meal} className="card">
             <div className="meal-header">
-              <span className="meal-title">{MEAL_ICONS[meal]} {meal}</span>
-              {mc>0 && <span style={{fontSize:13,fontWeight:600,color:'var(--subtext)'}}>{Math.round(mc)} cal</span>}
+              <div>
+                <div className="meal-title">{meal.toUpperCase()}</div>
+                {mc>0 && <div style={{fontSize:12,color:'var(--subtext)',marginTop:2}}>{Math.round(mc)} cal</div>}
+              </div>
+              <button className="btn btn-sm btn-secondary" onClick={()=>onAddFood(meal)} style={{gap:6}}>
+                <Icon name="plus" size={14}/> Add
+              </button>
             </div>
-            {me.length===0 && <div style={{fontSize:13,color:'var(--subtext)',marginBottom:4}}>Nothing logged yet</div>}
+            {me.length===0 && <div style={{fontSize:13,color:'var(--muted)',padding:'4px 0'}}>Nothing logged yet</div>}
             {me.map(e=>(
               <div key={e.id} className="log-entry">
                 <div className="log-entry-info">
                   <div className="log-entry-name">{e.name}</div>
-                  <div className="log-entry-meta">{e.qty!==1?`${e.qty}x · `:''}P:{r1(e.p)}g  C:{r1(e.c)}g  F:{r1(e.f)}g</div>
+                  <div className="log-entry-meta">{e.qty !== 1 ? `${e.qty}x · ` : ''}{e.srv} · {Math.round(e.cal)} cal</div>
                 </div>
-                <span style={{fontSize:13,fontWeight:700}}>{Math.round(e.cal)}</span>
-                <button className="delete-btn" onClick={()=>onRemove(e.id)}>×</button>
+                <div style={{display:'flex',gap:4,marginRight:8}}>
+                  <span className="macro-pill pill-p">P{r1(e.p)}g</span>
+                </div>
+                <button className="delete-btn" onClick={()=>onRemove(e.id)} aria-label="Delete entry">
+                  <Icon name="trash" size={14}/>
+                </button>
               </div>
             ))}
-            <button className="add-row-btn" onClick={()=>onAddFood(meal)}>＋ Add food</button>
           </div>
         );
       })}
@@ -828,22 +771,33 @@ function SearchTab({defaultMeal, onAdd}) {
   return (
     <div>
       <div style={{padding:'12px 12px 0'}}>
-        <input type="search" placeholder="Search 170+ foods..." value={q} onChange={e=>setQ(e.target.value)}/>
+        <div style={{position:'relative'}}>
+          <div style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',color:'var(--muted)',pointerEvents:'none'}}>
+            <Icon name="search" size={18}/>
+          </div>
+          <input type="search" placeholder="Search 170+ foods..." value={q} onChange={e=>setQ(e.target.value)} style={{paddingLeft:44}}/>
+        </div>
       </div>
-      <div className="chips-row" style={{paddingTop:8,paddingBottom:8}}>
+      <div className="chips-row" style={{paddingTop:10,paddingBottom:6}}>
         {CATEGORIES.map(c=>(
-          <div key={c} className={`chip${cat===c?' active':''}`} onClick={()=>setCat(c)}>{c}</div>
+          <div key={c} className={`chip${cat===c?' active':''}`} onClick={()=>setCat(c)} style={{cursor:'pointer'}}>{c}</div>
         ))}
       </div>
-      <div className="card" style={{padding:0,overflow:'hidden'}}>
-        {results.length===0 && <div className="empty-state"><div style={{fontSize:36,marginBottom:8}}>🤷</div><div style={{fontSize:14}}>No foods found</div></div>}
+      <div className="card-flush">
+        {results.length===0 && (
+          <div className="empty-state">
+            <div className="empty-state-icon"><Icon name="search" size={24} color="var(--muted)"/></div>
+            <div style={{fontSize:15,fontWeight:600,marginBottom:4}}>No foods found</div>
+            <div style={{fontSize:13}}>Try a different search</div>
+          </div>
+        )}
         {results.slice(0,60).map(food=>(
           <div key={food.id} className="food-item" onClick={()=>setSelected(food)}>
-            <div className="food-icon" style={{background:CAT_BG[food.cat]||'#f9fafb'}}><span>{food.icon}</span></div>
+            <div className="food-icon"><span>{food.icon}</span></div>
             <div className="food-info">
               <div className="food-name">{food.name}</div>
               <div className="food-meta">{food.srv}</div>
-              <div style={{display:'flex',gap:4,marginTop:3}}>
+              <div style={{display:'flex',gap:4,marginTop:4}}>
                 <span className="macro-pill pill-p">P{food.p}g</span>
                 <span className="macro-pill pill-c">C{food.c}g</span>
                 <span className="macro-pill pill-f">F{food.f}g</span>
@@ -867,31 +821,31 @@ function AddFoodModal({food, defaultMeal, onAdd, onClose}) {
       <div className="modal" onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
         <div className="modal-header">
-          <span className="modal-title">{food.icon} {food.name}</span>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <span className="modal-title">{food.name}</span>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="x" size={16}/></button>
         </div>
         <div style={{padding:16}}>
-          <div style={{background:'var(--bg)',borderRadius:12,padding:12,marginBottom:14,display:'flex',justifyContent:'space-around',textAlign:'center'}}>
-            <div><div style={{fontSize:22,fontWeight:800,color:'var(--green)'}}>{Math.round(food.cal*q)}</div><div style={{fontSize:11,color:'var(--subtext)'}}>cal</div></div>
-            <div><div style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>{r1(food.p*q)}g</div><div style={{fontSize:11,color:'var(--subtext)'}}>protein</div></div>
-            <div><div style={{fontSize:18,fontWeight:700,color:'#f59e0b'}}>{r1(food.c*q)}g</div><div style={{fontSize:11,color:'var(--subtext)'}}>carbs</div></div>
-            <div><div style={{fontSize:18,fontWeight:700,color:'#ef4444'}}>{r1(food.f*q)}g</div><div style={{fontSize:11,color:'var(--subtext)'}}>fat</div></div>
+          <div style={{background:'var(--surface-2)',borderRadius:14,padding:14,marginBottom:14,display:'flex',justifyContent:'space-around',textAlign:'center',border:'1px solid var(--border)'}}>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:'var(--orange)'}}>{Math.round(food.cal*q)}</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>CAL</div></div>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:'#60A5FA'}}>{r1(food.p*q)}g</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>PROTEIN</div></div>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:'#FCD34D'}}>{r1(food.c*q)}g</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>CARBS</div></div>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:'#F87171'}}>{r1(food.f*q)}g</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>FAT</div></div>
           </div>
-          <div style={{fontSize:12,color:'var(--subtext)',marginBottom:12,textAlign:'center'}}>1 serving = {food.srv}</div>
-          <div style={{marginBottom:8,fontSize:13,fontWeight:600,color:'var(--subtext)'}}>Servings</div>
-          <input type="number" value={qty} min="0.25" step="0.5" onChange={e=>setQty(e.target.value)} style={{fontSize:20,fontWeight:700,textAlign:'center',marginBottom:10}}/>
+          <div style={{fontSize:12,color:'var(--muted)',marginBottom:14,textAlign:'center'}}>1 serving = {food.srv}</div>
+          <div className="form-label">Servings</div>
+          <input type="number" value={qty} min="0.25" step="0.5" onChange={e=>setQty(e.target.value)} style={{fontSize:22,fontWeight:700,textAlign:'center',marginBottom:10,fontFamily:"'Barlow Condensed',sans-serif"}}/>
           <div style={{display:'flex',gap:8,marginBottom:16}}>
             {['0.5','1','1.5','2','3'].map(v=>(
-              <button key={v} className={`btn btn-sm${qty===v?' btn-primary':' btn-secondary'}`} style={{flex:1}} onClick={()=>setQty(v)}>{v}x</button>
+              <button key={v} className={`btn btn-sm${qty===v?' btn-primary':' btn-secondary'}`} style={{flex:1,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}} onClick={()=>setQty(v)}>{v}×</button>
             ))}
           </div>
-          <div style={{marginBottom:10,fontSize:13,fontWeight:600,color:'var(--subtext)'}}>Meal</div>
-          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
+          <div className="form-label">Meal</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:18}}>
             {MEALS.map(m=>(
-              <button key={m} className={`btn btn-sm${meal===m?' btn-primary':' btn-secondary'}`} onClick={()=>setMeal(m)}>{MEAL_ICONS[m]} {m}</button>
+              <button key={m} className={`btn btn-sm${meal===m?' btn-primary':' btn-secondary'}`} onClick={()=>setMeal(m)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>{m}</button>
             ))}
           </div>
-          <button className="btn btn-primary btn-block" onClick={()=>{if(q>0)onAdd(q,meal);}}>Add to {meal}</button>
+          <button className="btn btn-primary btn-block" style={{fontSize:16}} onClick={()=>{if(q>0)onAdd(q,meal);}}>Add to {meal}</button>
         </div>
       </div>
     </div>
@@ -901,22 +855,22 @@ function AddFoodModal({food, defaultMeal, onAdd, onClose}) {
 function RecipesTab({recipes, onNew, onView, onLog}) {
   return (
     <div>
-      <div style={{padding:'12px 12px 4px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <span style={{fontWeight:700,fontSize:17}}>My Recipes</span>
-        <button className="btn btn-primary btn-sm" onClick={onNew}>＋ New Recipe</button>
+      <div style={{padding:'14px 12px 6px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:20,letterSpacing:'0.3px'}}>MY RECIPES</span>
+        <button className="btn btn-primary btn-sm" onClick={onNew} style={{gap:6}}><Icon name="plus" size={14}/>New Recipe</button>
       </div>
       {recipes.length===0 && (
         <div className="empty-state" style={{marginTop:40}}>
-          <div style={{fontSize:40,marginBottom:8}}>📖</div>
-          <div style={{fontSize:16,fontWeight:600,marginBottom:6}}>No saved recipes</div>
-          <div style={{fontSize:13}}>Create recipes to log them with one tap</div>
+          <div className="empty-state-icon" style={{width:64,height:64,borderRadius:18}}><Icon name="book" size={28} color="var(--muted)"/></div>
+          <div style={{fontSize:16,fontWeight:600,marginBottom:6,color:'var(--text)'}}>No saved recipes</div>
+          <div style={{fontSize:13,color:'var(--subtext)'}}>Create recipes to log them with one tap</div>
         </div>
       )}
       {recipes.map(r=>(
         <div key={r.id} className="recipe-card" onClick={()=>onView(r)}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
             <div className="recipe-name">{r.name}</div>
-            <button className="btn btn-primary btn-sm" onClick={e=>{e.stopPropagation();onLog(r);}}>Log</button>
+            <button className="btn btn-green btn-sm" onClick={e=>{e.stopPropagation();onLog(r);}} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>Log</button>
           </div>
           <div style={{fontSize:12,color:'var(--subtext)',marginBottom:8}}>{r.ingredients.length} ingredient{r.ingredients.length!==1?'s':''} · {r.servings} serving{r.servings!==1?'s':''}</div>
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
@@ -924,7 +878,7 @@ function RecipesTab({recipes, onNew, onView, onLog}) {
             <span className="macro-pill pill-p">P {r1(r.p)}g</span>
             <span className="macro-pill pill-c">C {r1(r.c)}g</span>
             <span className="macro-pill pill-f">F {r1(r.f)}g</span>
-            <span style={{fontSize:11,color:'var(--subtext)',alignSelf:'center'}}>per serving</span>
+            <span style={{fontSize:11,color:'var(--muted)',alignSelf:'center'}}>per serving</span>
           </div>
         </div>
       ))}
@@ -967,8 +921,8 @@ function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
       <div className="modal" style={{maxHeight:'92vh'}} onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
         <div className="modal-header">
-          <span className="modal-title">{isView?'📖 '+recipe.name:'🍳 Build Recipe'}</span>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <span className="modal-title">{isView?recipe.name:'Build Recipe'}</span>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="x" size={16}/></button>
         </div>
         <div style={{padding:16}}>
           {!isView && (
@@ -984,14 +938,14 @@ function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
             </>
           )}
           {ingredients.length>0 && (
-            <div style={{background:'var(--green-light)',borderRadius:12,padding:12,marginBottom:14,display:'flex',justifyContent:'space-around',textAlign:'center'}}>
-              <div><div style={{fontSize:20,fontWeight:800,color:'var(--green)'}}>{Math.round(totals.cal)}</div><div style={{fontSize:10,color:'var(--green-dark)'}}>cal/srv</div></div>
+            <div style={{background:'var(--green-dim)',borderRadius:12,padding:12,marginBottom:14,display:'flex',justifyContent:'space-around',textAlign:'center',border:'1px solid rgba(34,197,94,0.2)'}}>
+              <div><div style={{fontSize:20,fontWeight:800,color:'var(--green)'}}>{Math.round(totals.cal)}</div><div style={{fontSize:10,color:'var(--subtext)'}}>cal/srv</div></div>
               <div><div style={{fontSize:16,fontWeight:700,color:'#3b82f6'}}>{totals.p}g</div><div style={{fontSize:10,color:'var(--subtext)'}}>protein</div></div>
               <div><div style={{fontSize:16,fontWeight:700,color:'#f59e0b'}}>{totals.c}g</div><div style={{fontSize:10,color:'var(--subtext)'}}>carbs</div></div>
               <div><div style={{fontSize:16,fontWeight:700,color:'#ef4444'}}>{totals.f}g</div><div style={{fontSize:10,color:'var(--subtext)'}}>fat</div></div>
             </div>
           )}
-          <div style={{fontWeight:700,fontSize:14,marginBottom:8}}>Ingredients</div>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,marginBottom:10,letterSpacing:'0.3px'}}>INGREDIENTS</div>
           {ingredients.length===0 && <div style={{fontSize:13,color:'var(--subtext)',marginBottom:8}}>No ingredients yet</div>}
           {ingredients.map((ing,i)=>(
             <div key={i} className="log-entry">
@@ -1000,28 +954,28 @@ function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
                 <div className="log-entry-name">{ing.name}</div>
                 <div className="log-entry-meta">{ing.qty!==1?`${ing.qty}x `:''}1 serving · {Math.round(ing.cal)} cal</div>
               </div>
-              {!isView && <button className="delete-btn" onClick={()=>removeIng(i)}>×</button>}
+              {!isView && <button className="delete-btn" onClick={()=>removeIng(i)} aria-label="Delete ingredient"><Icon name="trash" size={14}/></button>}
             </div>
           ))}
           {!isView && !showSearch && (
-            <button className="add-row-btn" onClick={()=>setShowSearch(true)}>＋ Add ingredient</button>
+            <button className="add-row-btn" onClick={()=>setShowSearch(true)}><Icon name="plus" size={14}/>Add ingredient</button>
           )}
           {!isView && showSearch && (
             <div style={{marginTop:8}}>
               <input type="search" placeholder="Search ingredient..." value={search} onChange={e=>setSearch(e.target.value)} autoFocus style={{marginBottom:8}}/>
-              <div style={{maxHeight:180,overflowY:'auto',borderRadius:10,border:'1.5px solid var(--border)'}}>
+              <div style={{maxHeight:180,overflowY:'auto',borderRadius:10,border:'1.5px solid var(--border)',background:'var(--surface-2)'}}>
                 {filteredFoods.map(food=>(
-                  <div key={food.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderBottom:'1px solid var(--bg)',background:'white',cursor:'pointer'}}>
+                  <div key={food.id} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderBottom:'1px solid var(--border)',cursor:'pointer'}}>
                     <span style={{fontSize:18}}>{food.icon}</span>
                     <div style={{flex:1,minWidth:0,cursor:'pointer'}} onClick={()=>addIng(food)}>
-                      <div style={{fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{food.name}</div>
+                      <div style={{fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--text)'}}>{food.name}</div>
                       <div style={{fontSize:11,color:'var(--subtext)'}}>{food.srv} · {food.cal} cal</div>
                     </div>
                     <div style={{display:'flex',alignItems:'center',gap:4}} onClick={e=>e.stopPropagation()}>
                       <input type="number" value={ingQty[food.id]||'1'} min="0.25" step="0.5"
                         onChange={e=>setIngQty(prev=>({...prev,[food.id]:e.target.value}))}
-                        style={{width:44,fontSize:13,padding:'4px 6px',textAlign:'center'}}/>
-                      <button className="btn btn-primary btn-sm" onClick={()=>addIng(food)}>+</button>
+                        style={{width:44,fontSize:13,padding:'4px 6px',textAlign:'center',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,color:'var(--text)',outline:'none'}}/>
+                      <button className="btn btn-primary btn-sm" onClick={()=>addIng(food)}><Icon name="plus" size={12}/></button>
                     </div>
                   </div>
                 ))}
@@ -1057,27 +1011,27 @@ function LogRecipeModal({recipe, onLog, onClose}) {
       <div className="modal" onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
         <div className="modal-header">
-          <span className="modal-title">📖 {recipe.name}</span>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <span className="modal-title">{recipe.name}</span>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="x" size={16}/></button>
         </div>
         <div style={{padding:16}}>
-          <div style={{background:'var(--bg)',borderRadius:12,padding:12,marginBottom:14,display:'flex',justifyContent:'space-around',textAlign:'center'}}>
-            <div><div style={{fontSize:22,fontWeight:800,color:'var(--green)'}}>{Math.round(recipe.cal*q)}</div><div style={{fontSize:11,color:'var(--subtext)'}}>cal</div></div>
-            <div><div style={{fontSize:18,fontWeight:700,color:'#3b82f6'}}>{r1(recipe.p*q)}g</div><div style={{fontSize:11,color:'var(--subtext)'}}>protein</div></div>
-            <div><div style={{fontSize:18,fontWeight:700,color:'#f59e0b'}}>{r1(recipe.c*q)}g</div><div style={{fontSize:11,color:'var(--subtext)'}}>carbs</div></div>
-            <div><div style={{fontSize:18,fontWeight:700,color:'#ef4444'}}>{r1(recipe.f*q)}g</div><div style={{fontSize:11,color:'var(--subtext)'}}>fat</div></div>
+          <div style={{background:'var(--surface-2)',borderRadius:14,padding:14,marginBottom:14,display:'flex',justifyContent:'space-around',textAlign:'center',border:'1px solid var(--border)'}}>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:24,fontWeight:900,color:'var(--orange)'}}>{Math.round(recipe.cal*q)}</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>CAL</div></div>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:'#60A5FA'}}>{r1(recipe.p*q)}g</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>PROTEIN</div></div>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:'#FCD34D'}}>{r1(recipe.c*q)}g</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>CARBS</div></div>
+            <div><div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:20,fontWeight:800,color:'#F87171'}}>{r1(recipe.f*q)}g</div><div style={{fontSize:11,color:'var(--subtext)',marginTop:2}}>FAT</div></div>
           </div>
-          <div style={{fontSize:13,fontWeight:600,color:'var(--subtext)',marginBottom:8}}>Servings</div>
-          <input type="number" value={qty} min="0.5" step="0.5" onChange={e=>setQty(e.target.value)} style={{fontSize:20,fontWeight:700,textAlign:'center',marginBottom:10}}/>
+          <div className="form-label">Servings</div>
+          <input type="number" value={qty} min="0.5" step="0.5" onChange={e=>setQty(e.target.value)} style={{fontSize:20,fontWeight:700,textAlign:'center',marginBottom:10,fontFamily:"'Barlow Condensed',sans-serif"}}/>
           <div style={{display:'flex',gap:8,marginBottom:16}}>
             {['0.5','1','1.5','2'].map(v=>(
-              <button key={v} className={`btn btn-sm${qty===v?' btn-primary':' btn-secondary'}`} style={{flex:1}} onClick={()=>setQty(v)}>{v}x</button>
+              <button key={v} className={`btn btn-sm${qty===v?' btn-primary':' btn-secondary'}`} style={{flex:1,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}} onClick={()=>setQty(v)}>{v}x</button>
             ))}
           </div>
-          <div style={{fontSize:13,fontWeight:600,color:'var(--subtext)',marginBottom:10}}>Meal</div>
+          <div className="form-label">Meal</div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
             {MEALS.map(m=>(
-              <button key={m} className={`btn btn-sm${meal===m?' btn-primary':' btn-secondary'}`} onClick={()=>setMeal(m)}>{MEAL_ICONS[m]} {m}</button>
+              <button key={m} className={`btn btn-sm${meal===m?' btn-primary':' btn-secondary'}`} onClick={()=>setMeal(m)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>{m}</button>
             ))}
           </div>
           <button className="btn btn-primary btn-block" onClick={()=>{if(q>0)onLog(q,meal);}}>Add to {meal}</button>
@@ -1099,69 +1053,85 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
   return (
     <div>
       <div className="card" style={{marginTop:12}}>
-        <div style={{fontWeight:700,fontSize:16,marginBottom:2}}>Daily Goals</div>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:2,letterSpacing:'0.3px'}}>DAILY GOALS</div>
         <div style={{fontSize:12,color:'var(--subtext)',marginBottom:14}}>Set your nutrition targets</div>
-        {[{key:'calories',label:'Calories',unit:'kcal',color:'var(--green)'},{key:'protein',label:'Protein',unit:'g',color:'#3b82f6'},{key:'carbs',label:'Carbohydrates',unit:'g',color:'#f59e0b'},{key:'fat',label:'Fat',unit:'g',color:'#ef4444'}].map(({key,label,unit,color})=>(
+        {[
+          {key:'calories',label:'Calories',unit:'kcal',color:'var(--orange)'},
+          {key:'protein',label:'Protein',unit:'g',color:'#3B82F6'},
+          {key:'carbs',label:'Carbohydrates',unit:'g',color:'#F59E0B'},
+          {key:'fat',label:'Fat',unit:'g',color:'#EF4444'}
+        ].map(({key,label,unit,color})=>(
           <div key={key} className="settings-row">
-            <div><div className="settings-label" style={{color}}>{label}</div><div style={{fontSize:12,color:'var(--subtext)'}}>{unit} per day</div></div>
+            <div>
+              <div className="settings-label" style={{color}}>{label}</div>
+              <div style={{fontSize:11,color:'var(--muted)'}}>{unit} per day</div>
+            </div>
             <input className="settings-input" type="number" value={local[key]} min="0"
               onChange={e=>setLocal(p=>({...p,[key]:parseFloat(e.target.value)||0}))}/>
           </div>
         ))}
-        {changed && <button className="btn btn-primary btn-block" style={{marginTop:12}} onClick={()=>setGoals(local)}>Save Goals</button>}
+        {changed && <button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>setGoals(local)}>Save Goals</button>}
       </div>
+
       <div className="card">
-        <div style={{fontWeight:700,fontSize:15,marginBottom:12}}>Your Stats</div>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:14,letterSpacing:'0.3px'}}>YOUR STATS</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          <div style={{background:'var(--bg)',borderRadius:12,padding:12,textAlign:'center'}}>
-            <div style={{fontSize:26,fontWeight:800,color:'var(--green)'}}>{totalDays}</div>
+          <div style={{background:'var(--surface-2)',borderRadius:14,padding:14,textAlign:'center',border:'1px solid var(--border)'}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:'var(--orange)'}}>{totalDays}</div>
             <div style={{fontSize:12,color:'var(--subtext)'}}>days logged</div>
           </div>
-          <div style={{background:'var(--bg)',borderRadius:12,padding:12,textAlign:'center'}}>
-            <div style={{fontSize:26,fontWeight:800,color:'#3b82f6'}}>{avgCal||'—'}</div>
+          <div style={{background:'var(--surface-2)',borderRadius:14,padding:14,textAlign:'center',border:'1px solid var(--border)'}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:30,fontWeight:900,color:'#3B82F6'}}>{avgCal||'—'}</div>
             <div style={{fontSize:12,color:'var(--subtext)'}}>avg cal/day</div>
           </div>
-          {topFood && <div style={{background:'var(--bg)',borderRadius:12,padding:12,textAlign:'center',gridColumn:'1/-1'}}>
-            <div style={{fontSize:14,fontWeight:700,color:'#f59e0b'}}>{topFood[0]}</div>
-            <div style={{fontSize:12,color:'var(--subtext)'}}>most logged ({topFood[1]}x)</div>
+          {topFood && <div style={{background:'var(--surface-2)',borderRadius:14,padding:14,textAlign:'center',gridColumn:'1/-1',border:'1px solid var(--border)'}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:16,fontWeight:800,color:'#F59E0B'}}>{topFood[0]}</div>
+            <div style={{fontSize:12,color:'var(--subtext)'}}>most logged ({topFood[1]}×)</div>
           </div>}
         </div>
       </div>
+
       <div className="card">
-        <div style={{fontWeight:700,fontSize:15,marginBottom:10}}>Quick Macro Presets</div>
-        {[{label:'🔥 Fat Loss',cal:1600,p:160,c:130,f:55},{label:'⚖️ Maintain',cal:2000,p:150,c:220,f:65},{label:'💪 Muscle Gain',cal:2600,p:185,c:310,f:75}].map(({label,cal,p,c,f})=>(
-          <div key={label} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:14,letterSpacing:'0.3px'}}>QUICK PRESETS</div>
+        {[
+          {label:'Fat Loss',cal:1600,p:160,c:130,f:55,color:'#EF4444'},
+          {label:'Maintain',cal:2000,p:150,c:220,f:65,color:'#F59E0B'},
+          {label:'Muscle Gain',cal:2600,p:185,c:310,f:75,color:'#22C55E'}
+        ].map(({label,cal,p,c,f,color})=>(
+          <div key={label} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
             <div>
-              <div style={{fontWeight:600,fontSize:14}}>{label}</div>
-              <div style={{fontSize:12,color:'var(--subtext)'}}>{cal} cal · P:{p}g C:{c}g F:{f}g</div>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,color,letterSpacing:'0.3px'}}>{label.toUpperCase()}</div>
+              <div style={{fontSize:12,color:'var(--subtext)',marginTop:2}}>{cal} cal · P:{p}g C:{c}g F:{f}g</div>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={()=>{const g={calories:cal,protein:p,carbs:c,fat:f};setLocal(g);setGoals(g);}}>Use</button>
           </div>
         ))}
       </div>
+
       <div className="card">
-        <div style={{fontWeight:700,fontSize:15,marginBottom:8}}>📱 Add to iPhone Home Screen</div>
-        <div style={{fontSize:13,color:'var(--subtext)',lineHeight:1.7}}>
-          <div>1. Open <strong>caltrack.html</strong> in <strong>Safari</strong></div>
-          <div>2. Tap the <strong>Share</strong> button (box with arrow ↑)</div>
-          <div>3. Tap <strong>"Add to Home Screen"</strong></div>
-          <div>4. Tap <strong>Add</strong></div>
-          <div style={{marginTop:8,padding:10,background:'var(--green-light)',borderRadius:8,color:'var(--green-dark)'}}>
-            ✅ All your data saves to your device automatically
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:6,letterSpacing:'0.3px'}}>INSTALL ON IPHONE</div>
+        <div style={{fontSize:13,color:'var(--subtext)',lineHeight:1.8}}>
+          <div>1. Open in <strong style={{color:'var(--text)'}}>Safari</strong></div>
+          <div>2. Tap the <strong style={{color:'var(--text)'}}>Share ↑</strong> button</div>
+          <div>3. Tap <strong style={{color:'var(--text)'}}"Add to Home Screen"</strong></div>
+          <div>4. Tap <strong style={{color:'var(--text)'}}>Add</strong></div>
+          <div style={{marginTop:10,padding:12,background:'var(--green-dim)',borderRadius:10,color:'var(--green)',fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:13}}>
+            ✓ Data syncs across all your devices
           </div>
         </div>
       </div>
+
       <div className="card" style={{marginBottom:32}}>
-        <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>👤 Current Profile</div>
-        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14,padding:'12px 14px',background:'var(--bg)',borderRadius:12}}>
-          <span style={{fontSize:32}}>{profileEmoji}</span>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:14,letterSpacing:'0.3px'}}>PROFILE</div>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16,padding:'12px 14px',background:'var(--surface-2)',borderRadius:14,border:'1px solid var(--border)'}}>
+          <span style={{fontSize:34}}>{profileEmoji}</span>
           <div>
-            <div style={{fontWeight:700,fontSize:16}}>{profileName}</div>
-            <div style={{fontSize:12,color:'var(--subtext)'}}>Logged in</div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:18,color:'var(--text)'}}>{profileName}</div>
+            <div style={{fontSize:12,color:'var(--subtext)'}}>Signed in</div>
           </div>
         </div>
-        <button className="btn btn-secondary btn-block" onClick={onSwitchProfile}>
-          🔄 Switch Profile
+        <button className="btn btn-secondary btn-block" style={{gap:8}} onClick={onSwitchProfile}>
+          <Icon name="logout" size={16}/> Switch Profile
         </button>
       </div>
     </div>
