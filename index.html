@@ -1025,7 +1025,18 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile, onUpdatePro
             if(!logDict[row.date]) logDict[row.date]=[];
             logDict[row.date].push(e);
           }
-          updateLog(logDict);
+          // Merge with localStorage — keep local-only entries (e.g. quick adds added while loading)
+          setLog(prev => {
+            const merged = {...logDict};
+            for(const d of Object.keys(prev)){
+              const localEntries = prev[d]||[];
+              const remoteIds = new Set((merged[d]||[]).map(e=>e.id));
+              const localOnly = localEntries.filter(e=>!remoteIds.has(e.id));
+              if(localOnly.length>0) merged[d]=[...(merged[d]||[]),...localOnly];
+            }
+            try { localStorage.setItem(`ct_log_${profileId}`, JSON.stringify(merged)); } catch{}
+            return merged;
+          });
           setRecipes((recipesRes.data||[]).map(r=>({id:r.id,name:r.name,servings:r.servings,
             cal:r.cal,p:r.p,c:r.c,f:r.f,ingredients:r.ingredients||[]})));
           if(goalsRes.data) setGoals({calories:goalsRes.data.calories,protein:goalsRes.data.protein,
