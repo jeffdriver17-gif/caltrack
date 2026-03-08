@@ -1122,12 +1122,12 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile, onUpdatePro
     <div className="app">
       {toast && <div key={toast+Date.now()} className="toast">{toast}</div>}
       <div className="header">
-        <div className="header-inner">
-          <button onClick={onSwitchProfile} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:8,padding:0,minHeight:44}}>
+        <div className="header-inner" style={{display:'grid',gridTemplateColumns:'44px 1fr 44px',alignItems:'center'}}>
+          <button onClick={()=>setTab('settings')} style={{background:'none',border:'none',cursor:'pointer',padding:0,minHeight:44,display:'flex',alignItems:'center',justifyContent:'flex-start'}}>
             <span style={{fontSize:24,lineHeight:1}}>{profileEmoji}</span>
-            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:'var(--subtext)',maxWidth:64,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{profileName}</span>
           </button>
-          <span className="header-brand">CalTrack</span>
+          <span style={{textAlign:'center',fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:22,letterSpacing:'2px',textTransform:'uppercase',background:'linear-gradient(135deg, #fff 40%, var(--orange))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>🥗 CalTrack</span>
+          <div/>
         </div>
       </div>
       <div className="scroll-area">
@@ -2127,6 +2127,7 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
   const [local, setLocal] = useState({...goals});
   const [editEmoji, setEditEmoji] = useState(false);
   const [busyEmoji, setBusyEmoji] = useState(false);
+  const [goalMode, setGoalMode] = useState('calculate');
   const [calcSex, setCalcSex] = useState('male');
   const [calcAge, setCalcAge] = useState('');
   const [calcWeightLbs, setCalcWeightLbs] = useState('');
@@ -2175,7 +2176,21 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
     : null;
   return (
     <div>
-      <div className="card" style={{marginTop:12}}>
+      <div style={{display:'flex',gap:6,padding:'12px 0 0',marginBottom:0}}>
+        {[{k:'calculate',label:'⚡ Calculate'},{k:'manual',label:'✏️ Manual'}].map(({k,label})=>(
+          <button key={k} onClick={()=>setGoalMode(k)}
+            style={{flex:1,padding:'11px 0',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',
+              fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'0.5px',
+              background:goalMode===k?'var(--orange)':'var(--surface-2)',
+              color:goalMode===k?'#000':'var(--subtext)',
+              border:goalMode===k?'2px solid var(--orange)':'2px solid var(--border)',
+              transition:'all 0.15s'}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {goalMode==='calculate' && <div className="card" style={{marginTop:12}}>
         <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:2,letterSpacing:'0.3px'}}>GOAL CALCULATOR</div>
         <div style={{fontSize:12,color:'var(--subtext)',marginBottom:14}}>Get personalized calorie &amp; macro targets</div>
         <div className="settings-row">
@@ -2292,11 +2307,11 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
             })}
           </div>
         )}
-      </div>
+      </div>}
 
-      <div className="card" style={{marginTop:12}}>
+      {goalMode==='manual' && <div className="card" style={{marginTop:12}}>
         <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:2,letterSpacing:'0.3px'}}>DAILY GOALS</div>
-        <div style={{fontSize:12,color:'var(--subtext)',marginBottom:14}}>Set your nutrition targets</div>
+        <div style={{fontSize:12,color:'var(--subtext)',marginBottom:14}}>Set your nutrition targets manually</div>
         {[
           {key:'calories',label:'Calories',unit:'kcal',color:'var(--orange)'},
           {key:'protein',label:'Protein',unit:'g',color:'#3B82F6'},
@@ -2313,7 +2328,7 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
           </div>
         ))}
         {changed && <button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>setGoals(local)}>Save Goals</button>}
-      </div>
+      </div>}
 
       <div className="card">
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
@@ -2361,23 +2376,6 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
       </div>
 
       <div className="card">
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:14,letterSpacing:'0.3px'}}>QUICK PRESETS</div>
-        {[
-          {label:'Fat Loss',cal:1600,p:160,c:130,f:55,color:'#EF4444'},
-          {label:'Maintain',cal:2000,p:150,c:220,f:65,color:'#F59E0B'},
-          {label:'Muscle Gain',cal:2600,p:185,c:310,f:75,color:'#22C55E'}
-        ].map(({label,cal,p,c,f,color})=>(
-          <div key={label} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 0',borderBottom:'1px solid var(--border)'}}>
-            <div>
-              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:15,color,letterSpacing:'0.3px'}}>{label.toUpperCase()}</div>
-              <div style={{fontSize:12,color:'var(--subtext)',marginTop:2}}>{cal} cal · P:{p}g C:{c}g F:{f}g</div>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={()=>{const g={calories:cal,protein:p,carbs:c,fat:f};setLocal(g);setGoals(g);}}>Use</button>
-          </div>
-        ))}
-      </div>
-
-      <div className="card">
         <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:6,letterSpacing:'0.3px'}}>INSTALL ON IPHONE</div>
         <div style={{fontSize:13,color:'var(--subtext)',lineHeight:1.8}}>
           <div>1. Open in <strong style={{color:'var(--text)'}}>Safari</strong></div>
@@ -2391,7 +2389,7 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
       </div>
 
       <div className="card" style={{marginBottom:32}}>
-        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:14,letterSpacing:'0.3px'}}>PROFILE</div>
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,marginBottom:14,letterSpacing:'0.3px'}}>ACCOUNT</div>
         <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16,padding:'12px 14px',background:'var(--surface-2)',borderRadius:14,border:'1px solid var(--border)'}}>
           <span style={{fontSize:34}}>{profileEmoji}</span>
           <div>
@@ -2399,8 +2397,9 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
             <div style={{fontSize:12,color:'var(--subtext)'}}>Signed in</div>
           </div>
         </div>
-        <button className="btn btn-secondary btn-block" style={{gap:8}} onClick={onSwitchProfile}>
-          <Icon name="logout" size={16}/> Switch Profile
+        <button className="btn btn-block" onClick={onSwitchProfile}
+          style={{gap:8,background:'#1a0808',border:'1.5px solid #EF4444',color:'#EF4444',fontWeight:800,borderRadius:14,padding:'14px',fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'0.5px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <Icon name="logout" size={16}/> Sign Out
         </button>
       </div>
     </div>
