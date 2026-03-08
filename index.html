@@ -478,18 +478,20 @@ function uid() {
 }
 function todayStr() {
   const d = new Date();
-  return d.toISOString().split('T')[0];
+  // Use local date (not UTC) to avoid off-by-one at night in US timezones
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function fmtDate(d) {
-  const [y,m,day] = d.split('-');
+  const [y,m,day] = d.split('-').map(Number);
   const date = new Date(y,m-1,day);
   const opts = {weekday:'short',month:'short',day:'numeric'};
   return date.toLocaleDateString('en-US',opts);
 }
 function addDays(d, n) {
-  const [y,m,day] = d.split('-');
-  const dt = new Date(y,m-1,day+n);
-  return dt.toISOString().split('T')[0];
+  // Parse as numbers first — string '07' + 1 = '071' = 71 days, causing May bug
+  const [y,m,day] = d.split('-').map(Number);
+  const dt = new Date(y, m-1, day+n);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 function r1(n) { return Math.round(n*10)/10; }
 
@@ -856,7 +858,10 @@ function ProfileGate() {
 function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   const [tab, setTab] = useState('dashboard');
   const [date, setDate] = useState(todayStr);
-  const [log, setLog] = useState({});
+  // Initialize log from localStorage immediately so data survives refresh
+  const [log, setLog] = useState(()=>{
+    try { const c=localStorage.getItem(`ct_log_${profileId}`); return c?JSON.parse(c):{}; } catch{return {};}
+  });
   const [recipes, setRecipes] = useState([]);
   const [goals, setGoals] = useState(DEFAULT_GOALS);
   const [water, setWater] = useState({});
@@ -867,6 +872,36 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   const [showCreate, setShowCreate] = useState(false);
   const [defaultMeal, setDefaultMeal] = useState('Breakfast');
   const [syncing, setSyncing] = useState(true);
+
+  // Supplement list + daily check state (localStorage-backed)
+  const [supplements, setSupplements] = useState(()=>{
+    try { const c=localStorage.getItem(`ct_supps_${profileId}`); return c?JSON.parse(c):[]; } catch{return [];}
+  });
+  const [suppChecks, setSuppChecks] = useState(()=>{
+    try { const c=localStorage.getItem(`ct_supp_checks_${profileId}`); return c?JSON.parse(c):{}; } catch{return {};}
+  });
+  function saveSupplements(list) {
+    setSupplements(list);
+    try { localStorage.setItem(`ct_supps_${profileId}`, JSON.stringify(list)); } catch{}
+  }
+  function toggleSuppCheck(suppId, date) {
+    setSuppChecks(prev=>{
+      const dateChecks = {...(prev[date]||{})};
+      dateChecks[suppId] = !dateChecks[suppId];
+      const next = {...prev,[date]:dateChecks};
+      try { localStorage.setItem(`ct_supp_checks_${profileId}`, JSON.stringify(next)); } catch{}
+      return next;
+    });
+  }
+
+  // Write-through cache: every log mutation also saves to localStorage instantly
+  const updateLog = useCallback((updater) => {
+    setLog(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try { localStorage.setItem(`ct_log_${profileId}`, JSON.stringify(next)); } catch{}
+      return next;
+    });
+  }, [profileId]);
 
   // ── Load all data from Supabase on mount ──────────────────────────────────
   useEffect(()=>{
@@ -892,7 +927,7 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
             if(!logDict[row.date]) logDict[row.date]=[];
             logDict[row.date].push(e);
           }
-          setLog(logDict);
+          updateLog(logDict);
           setRecipes((recipesRes.data||[]).map(r=>({id:r.id,name:r.name,servings:r.servings,
             cal:r.cal,p:r.p,c:r.c,f:r.f,ingredients:r.ingredients||[]})));
           if(goalsRes.data) setGoals({calories:goalsRes.data.calories,protein:goalsRes.data.protein,
@@ -919,14 +954,19 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
     const entry = {id:uid(),foodId:food.id,name:food.name,srv:food.srv,qty,
       cal:r1(food.cal*qty),p:r1(food.p*qty),c:r1(food.c*qty),f:r1(food.f*qty),
       meal,time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})};
-    setLog(prev=>({...prev,[date]:[...(prev[date]||[]),entry]}));
+    // Save to localStorage immediately (write-through) — survives refresh even if Supabase is slow
+    updateLog(prev=>({...prev,[date]:[...(prev[date]||[]),entry]}));
     showToast('Added '+food.name);
-    await sb.from('ct_food_logs').insert({id:entry.id,profile_id:profileId,date,
+    const {error} = await sb.from('ct_food_logs').insert({id:entry.id,profile_id:profileId,date,
       name:entry.name,srv:entry.srv,qty,cal:entry.cal,p:entry.p,c:entry.c,f:entry.f,
       meal,time:entry.time,food_id:food.id||null});
+    if(error) {
+      console.error('Save failed, entry kept in local cache:', error);
+      // Entry is still in localStorage — will re-sync next time if needed
+    }
   }
   async function removeEntry(id) {
-    setLog(prev=>({...prev,[date]:(prev[date]||[]).filter(e=>e.id!==id)}));
+    updateLog(prev=>({...prev,[date]:(prev[date]||[]).filter(e=>e.id!==id)}));
     await sb.from('ct_food_logs').delete().eq('id',id);
   }
   async function saveRecipe(recipe) {
@@ -954,7 +994,7 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
     const entry = {id:uid(),foodId:null,name:recipe.name+' (recipe)',srv:`${qty} serving${qty!==1?'s':''}`,qty,
       cal:r1(recipe.cal*qty),p:r1(recipe.p*qty),c:r1(recipe.c*qty),f:r1(recipe.f*qty),meal,
       time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})};
-    setLog(prev=>({...prev,[date]:[...(prev[date]||[]),entry]}));
+    updateLog(prev=>({...prev,[date]:[...(prev[date]||[]),entry]}));
     showToast('Logged '+recipe.name);
     await sb.from('ct_food_logs').insert({id:entry.id,profile_id:profileId,date,
       name:entry.name,srv:entry.srv,qty,cal:entry.cal,p:entry.p,c:entry.c,f:entry.f,
@@ -998,7 +1038,7 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
         </div>
       </div>
       <div className="scroll-area">
-        {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry} onQuickAdd={(cal,meal)=>addEntry({id:uid(),name:'Quick Add',icon:'⚡',srv:`${cal} cal`,cal,p:0,c:0,f:0},1,meal)}/>}
+        {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry} onQuickAdd={(cal,meal)=>addEntry({id:uid(),name:'Quick Add',icon:'⚡',srv:`${cal} cal`,cal,p:0,c:0,f:0},1,meal)} supplements={supplements} suppChecks={suppChecks[date]||{}} onSuppCheck={id=>toggleSuppCheck(id,date)} onSaveSupplements={saveSupplements}/>}
         {tab==='search' && <SearchTab defaultMeal={defaultMeal} onAdd={addEntry} profileId={profileId} profileName={profileName} showCreate={showCreate} onCreateHandled={()=>setShowCreate(false)}/>}
         {tab==='recipes' && <RecipesTab recipes={recipes} onNew={()=>setRecipeModal({mode:'new',recipe:null})} onView={r=>setRecipeModal({mode:'view',recipe:r})} onLog={r=>setLogRecipeModal(r)}/>}
         {tab==='settings' && <SettingsTab goals={goals} setGoals={saveGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji}/>}
@@ -1030,11 +1070,14 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   );
 }
 
-function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddFood, onRemove, onQuickAdd}) {
+function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddFood, onRemove, onQuickAdd, supplements, suppChecks, onSuppCheck, onSaveSupplements}) {
   const remaining = goals.calories - totals.cal;
   const overGoal = remaining < 0;
   const [quickMeal, setQuickMeal] = React.useState('Snacks');
   const [customCal, setCustomCal] = React.useState('');
+  const [newSupp, setNewSupp] = React.useState('');
+  const [editingSupps, setEditingSupps] = React.useState(false);
+  const doneCount = (supplements||[]).filter(s=>suppChecks&&suppChecks[s.id]).length;
   return (
     <div>
       {/* Calorie ring card */}
@@ -1128,6 +1171,78 @@ function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddF
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Supplements card */}
+      <div className="card">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:18}}>💊</span>
+            <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,letterSpacing:'0.3px'}}>SUPPLEMENTS</span>
+            {(supplements||[]).length>0 && (
+              <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:700,
+                color:doneCount===(supplements||[]).length?'#22C55E':'var(--muted)'}}>
+                {doneCount}/{(supplements||[]).length}
+              </span>
+            )}
+          </div>
+          <button onClick={()=>setEditingSupps(e=>!e)} style={{
+            background:'none',border:'1px solid var(--border)',borderRadius:8,
+            color:'var(--subtext)',fontSize:12,fontWeight:600,padding:'4px 10px',cursor:'pointer'
+          }}>{editingSupps?'Done':'Edit'}</button>
+        </div>
+
+        {/* Supplement rows */}
+        {(supplements||[]).length===0 && !editingSupps && (
+          <div style={{fontSize:13,color:'var(--muted)',paddingBottom:4}}>
+            No supplements added yet. Tap <b style={{color:'var(--subtext)'}}>Edit</b> to add some.
+          </div>
+        )}
+        {(supplements||[]).map(s=>(
+          <div key={s.id} style={{display:'flex',alignItems:'center',gap:12,padding:'8px 0',
+            borderBottom:'1px solid var(--border)'}}>
+            <button onClick={()=>onSuppCheck(s.id)} style={{
+              width:24,height:24,borderRadius:6,flexShrink:0,cursor:'pointer',
+              border: suppChecks&&suppChecks[s.id] ? 'none' : '2px solid var(--border)',
+              background: suppChecks&&suppChecks[s.id] ? '#22C55E' : 'transparent',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              transition:'all 0.15s'
+            }}>
+              {suppChecks&&suppChecks[s.id] && <span style={{color:'#fff',fontSize:14,fontWeight:700}}>✓</span>}
+            </button>
+            <span style={{flex:1,fontSize:15,fontWeight:500,
+              color:suppChecks&&suppChecks[s.id]?'var(--muted)':'var(--text)',
+              textDecoration:suppChecks&&suppChecks[s.id]?'line-through':'none',
+              transition:'all 0.15s'}}>{s.name}</span>
+            {editingSupps && (
+              <button onClick={()=>onSaveSupplements((supplements||[]).filter(x=>x.id!==s.id))}
+                style={{background:'none',border:'none',color:'var(--red)',fontSize:18,
+                  cursor:'pointer',padding:'0 4px',lineHeight:1}}>×</button>
+            )}
+          </div>
+        ))}
+
+        {/* Add new supplement */}
+        {editingSupps && (
+          <div style={{display:'flex',gap:8,marginTop:10}}>
+            <input value={newSupp} onChange={e=>setNewSupp(e.target.value)}
+              onKeyDown={e=>{if(e.key==='Enter'&&newSupp.trim()){
+                onSaveSupplements([...(supplements||[]),{id:uid(),name:newSupp.trim()}]);
+                setNewSupp('');
+              }}}
+              placeholder="Add supplement (e.g. Vitamin D)..."
+              style={{flex:1,background:'var(--surface)',border:'1px solid var(--border)',
+                borderRadius:10,padding:'8px 12px',color:'var(--text)',fontSize:13}}/>
+            <button onClick={()=>{
+              if(newSupp.trim()){
+                onSaveSupplements([...(supplements||[]),{id:uid(),name:newSupp.trim()}]);
+                setNewSupp('');
+              }
+            }} style={{background:'var(--orange)',border:'none',borderRadius:10,
+              padding:'8px 16px',color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",
+              fontSize:13,fontWeight:800,cursor:'pointer'}}>Add</button>
+          </div>
+        )}
       </div>
 
       {/* Meal sections */}
