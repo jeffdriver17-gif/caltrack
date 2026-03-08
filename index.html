@@ -939,16 +939,21 @@ function ProfileGate() {
   const [activeProfile, setActiveProfile] = React.useState(()=>{
     try{return JSON.parse(localStorage.getItem('ct_active')||'null')}catch(e){return null}
   });
-  function selectProfile(p) { setActiveProfile(p); }
+  function selectProfile(p) { localStorage.setItem('ct_active', JSON.stringify(p)); setActiveProfile(p); }
   function switchProfile() {
     localStorage.removeItem('ct_active');
     setActiveProfile(null);
   }
+  function updateProfile(updates) {
+    const updated = {...activeProfile,...updates};
+    localStorage.setItem('ct_active', JSON.stringify(updated));
+    setActiveProfile(updated);
+  }
   if(!activeProfile) return <ProfileScreen onSelect={selectProfile}/>;
-  return <App profileId={activeProfile.id} profileName={activeProfile.name} profileEmoji={activeProfile.emoji} onSwitchProfile={switchProfile}/>;
+  return <App profileId={activeProfile.id} profileName={activeProfile.name} profileEmoji={activeProfile.emoji} onSwitchProfile={switchProfile} onUpdateProfile={updateProfile}/>;
 }
 
-function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
+function App({profileId, profileName, profileEmoji, onSwitchProfile, onUpdateProfile}) {
   const [tab, setTab] = useState('dashboard');
   const [date, setDate] = useState(todayStr);
   // Initialize log from localStorage immediately so data survives refresh
@@ -1122,19 +1127,14 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
             <span style={{fontSize:24,lineHeight:1}}>{profileEmoji}</span>
             <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:700,color:'var(--subtext)',maxWidth:64,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{profileName}</span>
           </button>
-          <div className="date-nav">
-            <button className="date-btn" onClick={()=>setDate(d=>addDays(d,-1))} aria-label="Previous day"><Icon name="chevLeft" size={18}/></button>
-            <span className="date-label" onClick={()=>setDate(todayStr())}>{fmtDate(date)}</span>
-            <button className="date-btn" onClick={()=>setDate(d=>addDays(d,1))} aria-label="Next day"><Icon name="chevRight" size={18}/></button>
-          </div>
           <span className="header-brand">CalTrack</span>
         </div>
       </div>
       <div className="scroll-area">
-        {tab==='dashboard' && <DashboardTab date={date} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry} onQuickAdd={(cal,meal)=>addEntry({id:uid(),name:'Quick Add',icon:'⚡',srv:`${cal} cal`,cal,p:0,c:0,f:0},1,meal)} supplements={supplements} suppChecks={suppChecks[date]||{}} onSuppCheck={id=>toggleSuppCheck(id,date)} onSaveSupplements={saveSupplements}/>}
+        {tab==='dashboard' && <DashboardTab date={date} setDate={setDate} log={log} entries={dayEntries} totals={dayTotals} goals={goals} waterToday={waterToday} onWater={glasses=>saveWater(date,glasses)} onAddFood={meal=>{setDefaultMeal(meal);setTab('search');}} onRemove={removeEntry} onQuickAdd={(cal,meal)=>addEntry({id:uid(),name:'Quick Add',icon:'⚡',srv:`${cal} cal`,cal,p:0,c:0,f:0},1,meal)} supplements={supplements} suppChecks={suppChecks[date]||{}} onSuppCheck={id=>toggleSuppCheck(id,date)} onSaveSupplements={saveSupplements}/>}
         {tab==='search' && <SearchTab defaultMeal={defaultMeal} onAdd={addEntry} profileId={profileId} profileName={profileName} showCreate={showCreate} onCreateHandled={()=>setShowCreate(false)}/>}
-        {tab==='recipes' && <RecipesTab recipes={recipes} onNew={()=>setRecipeModal({mode:'new',recipe:null})} onView={r=>setRecipeModal({mode:'view',recipe:r})} onLog={r=>setLogRecipeModal(r)}/>}
-        {tab==='settings' && <SettingsTab goals={goals} setGoals={saveGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji}/>}
+        {tab==='recipes' && <RecipesTab recipes={recipes} onNew={()=>setRecipeModal({mode:'new',recipe:null})} onView={r=>setRecipeModal({mode:'view',recipe:r})} onEdit={r=>setRecipeModal({mode:'edit',recipe:r})} onLog={r=>setLogRecipeModal(r)}/>}
+        {tab==='settings' && <SettingsTab goals={goals} setGoals={saveGoals} log={log} onSwitchProfile={onSwitchProfile} profileName={profileName} profileEmoji={profileEmoji} profileId={profileId} onUpdateProfile={onUpdateProfile}/>}
       </div>
       <nav className="bottom-nav">
         {[
@@ -1163,16 +1163,35 @@ function App({profileId, profileName, profileEmoji, onSwitchProfile}) {
   );
 }
 
-function DashboardTab({date, entries, totals, goals, waterToday, onWater, onAddFood, onRemove, onQuickAdd, supplements, suppChecks, onSuppCheck, onSaveSupplements}) {
+function DashboardTab({date, setDate, log, entries, totals, goals, waterToday, onWater, onAddFood, onRemove, onQuickAdd, supplements, suppChecks, onSuppCheck, onSaveSupplements}) {
   const remaining = goals.calories - totals.cal;
   const overGoal = remaining < 0;
   const [quickMeal, setQuickMeal] = React.useState('Snacks');
   const [customCal, setCustomCal] = React.useState('');
   const [newSupp, setNewSupp] = React.useState('');
   const [editingSupps, setEditingSupps] = React.useState(false);
+  const [showCalendar, setShowCalendar] = React.useState(false);
   const doneCount = (supplements||[]).filter(s=>suppChecks&&suppChecks[s.id]).length;
   return (
     <div>
+      {/* Date nav + Calendar toggle */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 16px 4px'}}>
+        <div className="date-nav">
+          <button className="date-btn" onClick={()=>setDate(d=>addDays(d,-1))} aria-label="Previous day"><Icon name="chevLeft" size={18}/></button>
+          <span className="date-label" onClick={()=>setDate(todayStr())}>{fmtDate(date)}</span>
+          <button className="date-btn" onClick={()=>setDate(d=>addDays(d,1))} aria-label="Next day"><Icon name="chevRight" size={18}/></button>
+        </div>
+        <button onClick={()=>setShowCalendar(c=>!c)} style={{
+          background:showCalendar?'var(--orange)':'var(--surface-2)',border:'1px solid var(--border)',
+          borderRadius:10,padding:'7px 12px',color:showCalendar?'#fff':'var(--subtext)',
+          fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',gap:6,
+          fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:'0.3px'
+        }}>📅 {showCalendar?'Close':'Calendar'}</button>
+      </div>
+
+      {/* Calendar view */}
+      {showCalendar && <CalendarView log={log} goals={goals} date={date} setDate={d=>{setDate(d);setShowCalendar(false);}}/>}
+
       {/* Calorie ring card */}
       <div className="card" style={{marginTop:12}}>
         <div style={{display:'flex',alignItems:'center',gap:16}}>
@@ -1807,8 +1826,71 @@ function SearchTab({defaultMeal, onAdd, profileId, profileName, showCreate, onCr
   );
 }
 
+function CalendarView({log, goals, date, setDate}) {
+  const [y0,m0] = date.split('-').map(Number);
+  const [calYear, setCalYear] = React.useState(y0);
+  const [calMonth, setCalMonth] = React.useState(m0);
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+  const startDow = new Date(calYear, calMonth-1, 1).getDay();
+  const cells = [];
+  for(let i=0;i<startDow;i++) cells.push(null);
+  for(let d=1;d<=daysInMonth;d++) cells.push(d);
+  function dayStr(d){ return `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+  function prevMonth(){ if(calMonth===1){setCalYear(y=>y-1);setCalMonth(12);}else setCalMonth(m=>m-1); }
+  function nextMonth(){ if(calMonth===12){setCalYear(y=>y+1);setCalMonth(1);}else setCalMonth(m=>m+1); }
+  const today = todayStr();
+  return (
+    <div className="card" style={{marginTop:0}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+        <button className="date-btn" onClick={prevMonth}><Icon name="chevLeft" size={16}/></button>
+        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,letterSpacing:'0.3px'}}>{MONTHS[calMonth-1]} {calYear}</span>
+        <button className="date-btn" onClick={nextMonth}><Icon name="chevRight" size={16}/></button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:2,marginBottom:4}}>
+        {DOW.map(d=><div key={d} style={{textAlign:'center',fontSize:10,fontWeight:700,color:'var(--muted)',padding:'2px 0'}}>{d}</div>)}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3}}>
+        {cells.map((d,i)=>{
+          if(d===null) return <div key={i}/>;
+          const ds = dayStr(d);
+          const entries = log[ds]||[];
+          const cal = Math.round(entries.reduce((s,e)=>s+e.cal,0));
+          const isToday = ds===today;
+          const isSelected = ds===date;
+          const goal = goals?.calories||2000;
+          const pct = Math.min(cal/goal,1);
+          const hasData = entries.length>0;
+          const calColor = pct>=1?'#EF4444':pct>=0.75?'#F59E0B':'#22C55E';
+          return (
+            <div key={i} onClick={()=>setDate(ds)} style={{
+              borderRadius:8,padding:'5px 2px',cursor:'pointer',textAlign:'center',
+              background:isSelected?'var(--orange)':isToday?'var(--surface-2)':'transparent',
+              border:isToday&&!isSelected?'1.5px solid var(--orange)':'1.5px solid transparent',
+              minHeight:44,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+              transition:'all 0.15s'
+            }}>
+              <div style={{fontSize:13,fontWeight:isToday?800:500,color:isSelected?'#fff':'var(--text)',lineHeight:1}}>{d}</div>
+              {hasData && <div style={{fontSize:9,fontWeight:700,color:isSelected?'rgba(255,255,255,0.9)':calColor,marginTop:3,lineHeight:1}}>{cal}</div>}
+              {hasData && !isSelected && (
+                <div style={{width:'80%',height:2,borderRadius:2,marginTop:2,background:`linear-gradient(to right,${calColor} ${pct*100}%,var(--border) ${pct*100}%)`}}/>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{display:'flex',gap:12,marginTop:10,justifyContent:'center'}}>
+        <div style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:8,height:8,borderRadius:2,background:'#22C55E'}}/><span style={{fontSize:10,color:'var(--muted)'}}>Under goal</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:8,height:8,borderRadius:2,background:'#F59E0B'}}/><span style={{fontSize:10,color:'var(--muted)'}}>75%+</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:8,height:8,borderRadius:2,background:'#EF4444'}}/><span style={{fontSize:10,color:'var(--muted)'}}>Over goal</span></div>
+      </div>
+    </div>
+  );
+}
+
 function AddFoodModal({food, defaultMeal, onAdd, onClose}) {
-  const [qty, setQty] = useState('1');
+  const [qty, setQty] = useState('');
   const [meal, setMeal] = useState(defaultMeal);
   const q = parseFloat(qty)||0;
   return (
@@ -1847,7 +1929,7 @@ function AddFoodModal({food, defaultMeal, onAdd, onClose}) {
   );
 }
 
-function RecipesTab({recipes, onNew, onView, onLog}) {
+function RecipesTab({recipes, onNew, onView, onEdit, onLog}) {
   return (
     <div>
       <div style={{padding:'14px 12px 6px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -1865,7 +1947,10 @@ function RecipesTab({recipes, onNew, onView, onLog}) {
         <div key={r.id} className="recipe-card" onClick={()=>onView(r)}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
             <div className="recipe-name">{r.name}</div>
-            <button className="btn btn-green btn-sm" onClick={e=>{e.stopPropagation();onLog(r);}} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>Log</button>
+            <div style={{display:'flex',gap:6}} onClick={e=>e.stopPropagation()}>
+              <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(r)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>✏️</button>
+              <button className="btn btn-green btn-sm" onClick={()=>onLog(r)} style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700}}>Log</button>
+            </div>
           </div>
           <div style={{fontSize:12,color:'var(--subtext)',marginBottom:8}}>{r.ingredients.length} ingredient{r.ingredients.length!==1?'s':''} · {r.servings} serving{r.servings!==1?'s':''}</div>
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
@@ -1882,13 +1967,14 @@ function RecipesTab({recipes, onNew, onView, onLog}) {
 }
 
 function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
+  const [localMode, setLocalMode] = useState(mode);
   const [name, setName] = useState(recipe?.name||'');
   const [servings, setServings] = useState(recipe?.servings||1);
   const [ingredients, setIngredients] = useState(recipe?.ingredients||[]);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [ingQty, setIngQty] = useState({});
-  const isView = mode==='view';
+  const isView = localMode==='view';
 
   const totals = useMemo(()=>{
     const t = ingredients.reduce((a,i)=>({cal:a.cal+i.cal,p:a.p+i.p,c:a.c+i.c,f:a.f+i.f}),{cal:0,p:0,c:0,f:0});
@@ -1916,7 +2002,7 @@ function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
       <div className="modal" style={{maxHeight:'92vh'}} onClick={e=>e.stopPropagation()}>
         <div className="modal-handle"/>
         <div className="modal-header">
-          <span className="modal-title">{isView?recipe.name:'Build Recipe'}</span>
+          <span className="modal-title">{localMode==='view'?recipe.name:localMode==='edit'?'Edit Recipe':'Build Recipe'}</span>
           <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="x" size={16}/></button>
         </div>
         <div style={{padding:16}}>
@@ -1967,7 +2053,7 @@ function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
                       <div style={{fontSize:11,color:'var(--subtext)'}}>{food.srv} · {food.cal} cal</div>
                     </div>
                     <div style={{display:'flex',alignItems:'center',gap:4}} onClick={e=>e.stopPropagation()}>
-                      <input type="number" value={ingQty[food.id]||'1'} min="0.25" step="0.5"
+                      <input type="number" value={ingQty[food.id]||''} min="0.25" step="0.5"
                         onChange={e=>setIngQty(prev=>({...prev,[food.id]:e.target.value}))}
                         style={{width:44,fontSize:13,padding:'4px 6px',textAlign:'center',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,color:'var(--text)',outline:'none'}}/>
                       <button className="btn btn-primary btn-sm" onClick={()=>addIng(food)}><Icon name="plus" size={12}/></button>
@@ -1982,12 +2068,13 @@ function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
             {isView ? (
               <>
                 <button className="btn btn-primary btn-block" onClick={()=>onLog(recipe)}>Log This Recipe</button>
+                <button className="btn btn-secondary btn-block" onClick={()=>setLocalMode('edit')}>✏️ Edit Recipe</button>
                 <button className="btn btn-danger btn-block" onClick={()=>onDelete(recipe.id)}>Delete Recipe</button>
               </>
             ) : (
               <button className="btn btn-primary btn-block" disabled={!canSave} style={{opacity:canSave?1:0.5}}
                 onClick={()=>{if(canSave)onSave({...(recipe||{}),name:name.trim(),servings:Math.max(1,servings),ingredients,...totals});}}>
-                {recipe?'Update Recipe':'Save Recipe'}
+                {localMode==='edit'?'Update Recipe':'Save Recipe'}
               </button>
             )}
           </div>
@@ -1998,7 +2085,7 @@ function RecipeModal({mode, recipe, onSave, onDelete, onLog, onClose}) {
 }
 
 function LogRecipeModal({recipe, onLog, onClose}) {
-  const [qty, setQty] = useState('1');
+  const [qty, setQty] = useState('');
   const [meal, setMeal] = useState('Lunch');
   const q = parseFloat(qty)||0;
   return (
@@ -2036,8 +2123,17 @@ function LogRecipeModal({recipe, onLog, onClose}) {
   );
 }
 
-function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profileEmoji}) {
+function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profileEmoji, profileId, onUpdateProfile}) {
   const [local, setLocal] = useState({...goals});
+  const [editEmoji, setEditEmoji] = useState(false);
+  const [busyEmoji, setBusyEmoji] = useState(false);
+  async function saveEmoji(emoji) {
+    setBusyEmoji(true);
+    await sb.from('ct_profiles').update({emoji}).eq('id', profileId);
+    onUpdateProfile?.({emoji});
+    setBusyEmoji(false);
+    setEditEmoji(false);
+  }
   const changed = JSON.stringify(local)!==JSON.stringify(goals);
   const allEntries = Object.values(log).flat();
   const totalDays = Object.keys(log).filter(d=>log[d].length>0).length;
@@ -2066,6 +2162,33 @@ function SettingsTab({goals, setGoals, log, onSwitchProfile, profileName, profil
           </div>
         ))}
         {changed && <button className="btn btn-primary btn-block" style={{marginTop:14}} onClick={()=>setGoals(local)}>Save Goals</button>}
+      </div>
+
+      <div className="card">
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,letterSpacing:'0.3px'}}>PROFILE</div>
+          <button onClick={()=>setEditEmoji(e=>!e)} style={{background:'none',border:'1px solid var(--border)',borderRadius:8,color:'var(--subtext)',fontSize:12,fontWeight:600,padding:'4px 10px',cursor:'pointer'}}>{editEmoji?'Done':'Edit Emoji'}</button>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:editEmoji?14:0}}>
+          <span style={{fontSize:48,lineHeight:1}}>{profileEmoji}</span>
+          <div>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:18,fontWeight:800}}>{profileName}</div>
+            <div style={{fontSize:12,color:'var(--subtext)'}}>Tap "Edit Emoji" to change your avatar</div>
+          </div>
+        </div>
+        {editEmoji && (
+          <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+            {PROFILE_EMOJIS.map(e=>(
+              <button key={e} onClick={()=>saveEmoji(e)} disabled={busyEmoji}
+                style={{fontSize:28,background:profileEmoji===e?'var(--orange-dim)':'var(--surface-2)',
+                  border:profileEmoji===e?'2px solid var(--orange)':'2px solid transparent',
+                  borderRadius:12,padding:'8px',cursor:'pointer',transition:'all 0.15s',
+                  width:52,height:52,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {e}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card">
